@@ -1,0 +1,16 @@
+name: pipeline
+description: Pipeline to process FASTA / GFF3 / TPM files into a single datasource that can be loaded into for GOLEM.
+version: 1.0.0
+homepage: https://golem.ncbr.muni.cz
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  collection: ^1.16.0
+  csv: ^5.0.1
+  string_splitter: ^1.0.0+1
+
+dev_dependencies:
+  lints: ^2.0.0
+  test: ^1.16.0
