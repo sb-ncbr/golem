@@ -10,6 +10,7 @@ import 'package:golem_ui/widgets/motif_panel.dart';
 import 'package:golem_ui/widgets/stage_panel.dart';
 import 'package:golem_ui/widgets/source_panel.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// Widget that builds the contents of the Home Screen
 class Home extends StatefulWidget {
@@ -46,48 +47,64 @@ class _HomeState extends State<Home> {
     final filter = context.select<GeneModel, StageSelection?>((model) => model.stageSelection);
     final expectedResults = context.select<GeneModel, int>((model) => model.expectedSeriesCount);
 
-    return Stepper(
-      currentStep: _index,
-      onStepCancel: _index > 0 ? _handleStepCancel : null,
-      onStepContinue: _isStepAllowed(_index + 1) ? _handleStepContinue : null,
-      onStepTapped: _handleStepTapped,
-      steps: <Step>[
-        Step(
-          title: const Text('Species'),
-          subtitle: const SourceSubtitle(),
-          content: SourcePanel(onShouldClose: () => _handleStepTapped(1)),
-          state: sourceGenes == null
-              ? StepState.indexed
-              : sourceGenes.errors.isNotEmpty
-                  ? StepState.error
-                  : StepState.complete,
-        ),
-        Step(
-          title: const Text('Genomic interval'),
-          subtitle: const AnalysisOptionsSubtitle(),
-          content: AnalysisOptionsPanel(key: ValueKey(organismAndStages), onChanged: _handleAnalysisOptionsChanged),
-          state: sourceGenes == null ? StepState.indexed : StepState.complete,
-        ),
-        Step(
-          title: const Text('Analyzed motifs'),
-          subtitle: const MotifSubtitle(),
-          content: MotifPanel(key: ValueKey(organismAndStages), onChanged: _handleMotifsChanged),
-          state: expectedResults > 60 && motifs.length > 5
-              ? StepState.error
-              : motifs.isEmpty
-                  ? StepState.indexed
-                  : StepState.complete,
-        ),
-        Step(
-          title: const Text('Developmental stages'),
-          subtitle: const StageSubtitle(),
-          content: StagePanel(key: ValueKey(organismAndStages), onChanged: _handleStageSelectionChanged),
-          state:
-              filter?.selectedStages.isEmpty == true || expectedResults > 60 && (filter?.selectedStages.length ?? 0) > 5
-                  ? StepState.error
-                  : StepState.indexed,
-        ),
-      ],
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          Stepper(
+            currentStep: _index,
+            onStepCancel: _index > 0 ? _handleStepCancel : null,
+            onStepContinue: _isStepAllowed(_index + 1) ? _handleStepContinue : null,
+            onStepTapped: _handleStepTapped,
+            physics: const NeverScrollableScrollPhysics(),
+            steps: <Step>[
+              Step(
+                title: const Text('Species'),
+                subtitle: const SourceSubtitle(),
+                content: SourcePanel(onShouldClose: () => _handleStepTapped(1)),
+                state: sourceGenes == null
+                    ? StepState.indexed
+                    : sourceGenes.errors.isNotEmpty
+                        ? StepState.error
+                        : StepState.complete,
+              ),
+              Step(
+                title: const Text('Genomic interval'),
+                subtitle: const AnalysisOptionsSubtitle(),
+                content:
+                    AnalysisOptionsPanel(key: ValueKey(organismAndStages), onChanged: _handleAnalysisOptionsChanged),
+                state: sourceGenes == null ? StepState.indexed : StepState.complete,
+              ),
+              Step(
+                title: const Text('Analyzed motifs'),
+                subtitle: const MotifSubtitle(),
+                content: MotifPanel(key: ValueKey(organismAndStages), onChanged: _handleMotifsChanged),
+                state: expectedResults > 60 && motifs.length > 5
+                    ? StepState.error
+                    : motifs.isEmpty
+                        ? StepState.indexed
+                        : StepState.complete,
+              ),
+              Step(
+                title: const Text('Developmental stages'),
+                subtitle: const StageSubtitle(),
+                content: StagePanel(key: ValueKey(organismAndStages), onChanged: _handleStageSelectionChanged),
+                state: filter?.selectedStages.isEmpty == true ||
+                        expectedResults > 60 && (filter?.selectedStages.length ?? 0) > 5
+                    ? StepState.error
+                    : StepState.indexed,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const Divider(),
+          const SizedBox(height: 16),
+          InkWell(
+            onTap: () => launchUrl(Uri.parse('https://elixir-europe.org/')),
+            child: Image.asset('assets/logo_elixir.png', height: 64),
+          ),
+          const SizedBox(height: 16),
+        ],
+      ),
     );
   }
 
