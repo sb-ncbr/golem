@@ -6,8 +6,6 @@ class Gene {
   Gene._({
     required this.geneId,
     required this.data,
-    required this.header,
-    required this.notes,
     this.transcriptionRates = const {},
     this.markers = const {},
   });
@@ -16,7 +14,6 @@ class Gene {
   factory Gene.fromFasta(List<String> lines) {
     String? header;
     String? geneId;
-    List<String> notes = [];
     List<String> data = [];
     Map<String, num>? transcriptionRates;
     Map<String, int>? markers;
@@ -38,7 +35,6 @@ class Gene {
         if (markersJson != null) {
           markers = Map<String, int>.from(jsonDecode(markersJson));
         }
-        notes.add(line);
       } else {
         data.add(line.trim().toUpperCase());
       }
@@ -55,10 +51,8 @@ class Gene {
       }
     }
     return Gene._(
-      geneId: geneId,
+      geneId: String.fromCharCodes(geneId.codeUnits), // Ensure geneId not references the original string
       data: sequence,
-      header: header,
-      notes: notes,
       transcriptionRates: transcriptionRates ?? {},
       markers: markers ?? {},
     );
@@ -74,13 +68,7 @@ class Gene {
   /// Gene name including splicing variant, e.g. `ATG0001.1`
   final String geneId;
 
-  /// Header line (>GENE ID...)
-  final String header;
-
   final Map<String, int> markers;
-
-  /// Notes
-  final List<String> notes;
 
   final Map<String, num> transcriptionRates;
 
@@ -94,16 +82,12 @@ class Gene {
   Gene copyWith({
     String? geneId,
     String? data,
-    String? header,
-    List<String>? notes,
     Map<String, num>? transcriptionRates,
     Map<String, int>? markers,
   }) {
     return Gene._(
       geneId: geneId ?? this.geneId,
       data: data ?? this.data,
-      header: header ?? this.header,
-      notes: notes ?? this.notes,
       transcriptionRates: transcriptionRates ?? this.transcriptionRates,
       markers: markers ?? this.markers,
     );
