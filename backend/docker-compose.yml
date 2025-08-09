@@ -1,0 +1,43 @@
+services:
+  db:
+    container_name: geneweb-db
+    image: postgres:17-alpine
+    volumes:
+      - geneweb-db-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    environment:
+      # TODO: change these
+      POSTGRES_DB: ${POSTGRES_DB:-postgres}
+      POSTGRES_USER: ${POSTGRES_DB:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_DB:-postgres}
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "postgres" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - geneweb-network
+    restart: unless-stopped
+
+  api:
+    container_name: geneweb-api
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: "postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-postgres}"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - geneweb-network
+    restart: unless-stopped
+
+networks:
+  geneweb-network:
+
+volumes:
+  geneweb-db-data:
