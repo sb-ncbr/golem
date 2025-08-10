@@ -1,16 +1,15 @@
 """Main module."""
-import asyncio
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from starlette_admin.contrib.sqlmodel import Admin, ModelView
+from starlette_admin.contrib.sqlmodel import Admin
 
 from app.admin.admin_base import AdminViewBase, AdminIndexView
 from app.api.v1.middleware.user_loader import UserLoaderMiddleware
 from app.api.v1.routes.auth import auth_router
 from app.api.v1.routes.organisms import organisms_router
 from app.api.v1.routes.test import test_router
-from app.db.db import engine, add_default_admin
+from app.db.db import engine, add_default_admin_lifespan
 from app.db.models.group import Group
 from app.db.models.organism import Organism
 from app.db.models.user import User
@@ -48,15 +47,13 @@ def _setup_admin(app: FastAPI) -> None:
 
     admin.mount_to(app)
 
-    loop = asyncio.get_event_loop()
-    asyncio.run_coroutine_threadsafe(add_default_admin(), loop)
-
 
 def create_app() -> FastAPI:
     app = FastAPI(
         title="GOLEM API v1",
         docs_url=None,
         redoc_url=None,
+        lifespan=add_default_admin_lifespan,
     )
 
     _setup_middleware(app)

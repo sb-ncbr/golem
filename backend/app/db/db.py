@@ -1,5 +1,7 @@
+from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
+from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 
 from app.config import app_config
@@ -36,3 +38,11 @@ async def add_default_admin() -> None:
             )
         )
         return
+
+
+@asynccontextmanager
+async def add_default_admin_lifespan(_: FastAPI) -> AsyncGenerator[None, None]:
+    """Lifespan function that adds the default admin user to the database."""
+
+    await add_default_admin()
+    yield
