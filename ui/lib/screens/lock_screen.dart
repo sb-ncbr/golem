@@ -1,8 +1,9 @@
-import 'dart:convert';
-
-import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
+import 'package:geneweb/api/api_service.dart';
+import 'package:geneweb/api/auth.dart';
 import 'package:geneweb/genes/gene_model.dart';
+import 'package:dio/dio.dart';
+import 'package:geneweb/screens/home_screen.dart';
 
 class LockScreen extends StatelessWidget {
   const LockScreen({super.key});
@@ -33,12 +34,14 @@ class _Lock extends StatefulWidget {
 }
 
 class __LockState extends State<_Lock> {
-  late final _controller = TextEditingController();
+  late final _usernameController = TextEditingController();
+  late final _passwordController = TextEditingController();
 
   @override
   void dispose() {
     super.dispose();
-    _controller.dispose();
+    _passwordController.dispose();
+    _usernameController.dispose();
   }
 
   @override
@@ -54,30 +57,64 @@ class __LockState extends State<_Lock> {
             SizedBox(
               width: 300,
               child: TextField(
-                controller: _controller,
+                controller: _usernameController,
+                decoration: const InputDecoration(
+                  hintText: 'Enter your username',
+                  border: OutlineInputBorder(),
+                ),
+                obscureText: false,
+                onEditingComplete: _handleLogin,
+              ),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: 300,
+              child: TextField(
+                controller: _passwordController,
                 decoration: const InputDecoration(
                   hintText: 'Enter your password',
                   border: OutlineInputBorder(),
                 ),
                 obscureText: true,
-                onEditingComplete: _handleSubmit,
+                onEditingComplete: _handleLogin,
               ),
             ),
             const SizedBox(height: 20),
-            IconButton.filled(onPressed: _handleSubmit, icon: const Icon(Icons.arrow_forward)),
+            IconButton.filled(onPressed: _handleLogin, icon: const Icon(Icons.arrow_forward)),
           ],
         ),
       ),
     );
   }
 
-  void _handleSubmit() {
-    final password = _controller.text.trim();
-    final md5Hash = md5.convert(utf8.encode(password)).toString();
-    if (md5Hash == 'c36db9789b1401a805d8bb72ba70a3bc') {
-      GeneModel.of(context).isSignedIn = true;
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Incorrect password')));
+  Future _handleLogin() async {
+    final username = _usernameController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (username.isEmpty) {
+      return _showMessage('Username is required');
+    } else if (password.isEmpty) {
+      return _showMessage('Password is required');
     }
+
+    final formData =
+        FormData.fromMap({'username': username, 'password': password});
+
+    final apiService = ApiService();
+    final loginResponse = await apiService.post('/auth/login', data: formData);
+
+    if (!loginResponse.success && mounted) {
+      return _showMessage(loginResponse.message);
+    } else if (mounted) {
+      final user = User.fromJson(loginResponse.data['user']);
+      GeneModel.of(context).user = user;
+      Navigator.push(
+          context, MaterialPageRoute(builder: (context) => const HomeScreen()));
+    }
+  }
+
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 }

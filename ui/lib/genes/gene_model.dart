@@ -4,6 +4,7 @@ import 'package:geneweb/analysis/analysis_series.dart';
 import 'package:geneweb/analysis/analysis_options.dart';
 import 'package:geneweb/analysis/motif.dart';
 import 'package:geneweb/analysis/organism.dart';
+import 'package:geneweb/api/auth.dart';
 import 'package:geneweb/genes/gene.dart';
 import 'package:geneweb/genes/stage_selection.dart';
 import 'package:geneweb/genes/gene_list.dart';
@@ -22,12 +23,18 @@ class GeneModel extends ChangeNotifier {
   bool get publicSite => _publicSite;
   late bool _publicSite = deploymentFlavor == DeploymentFlavor.prod;
 
-  bool get isSignedIn => _isSignedIn;
-  bool _isSignedIn = false;
-  set isSignedIn(bool value) {
-    _isSignedIn = value;
+  /// Currently logged in user
+  User? _user;
+  
+  User? get user => _user;
+
+  set user(User? value) {
+    _user = value;
     notifyListeners();
   }
+
+  // Check if user is signed in
+  bool get isSignedIn => _user != null;
 
   /// Flag that the analyis has been cancelled by the user
   bool get analysisCancelled => _analysisCancelled;

@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:geneweb/api/api_service.dart';
+import 'package:geneweb/api/auth.dart';
 import 'package:geneweb/genes/gene_model.dart';
 import 'package:geneweb/screens/home_screen.dart';
 import 'package:geneweb/screens/lock_screen.dart';
@@ -35,8 +37,16 @@ class MyApp extends StatelessWidget {
           useMaterial3: true,
         ),
         home: Builder(builder: (context) {
-          final isSignedIn = context.select<GeneModel, bool>((model) => model.isSignedIn);
-          return (deploymentFlavor == DeploymentFlavor.dev && !isSignedIn) ? const LockScreen() : const HomeScreen();
+          final apiService = ApiService();
+          apiService.get("/auth/me").then((response) async {
+            if (context.mounted) {
+              final user =
+                  User.fromJson(response.data as Map<String, dynamic>);
+              Provider.of<GeneModel>(context, listen: false).user = user;
+            }
+          });
+
+          return const HomeScreen();
         }),
       ),
     );

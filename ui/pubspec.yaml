@@ -1,7 +1,7 @@
 name: geneweb
 description: A new Flutter project.
 
-publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+publish_to: "none" # Remove this line if you wish to publish to pub.dev
 
 version: 1.2.1+6
 
@@ -30,6 +30,8 @@ dependencies:
   flutter_native_splash: ^2.1.0
   csv: ^6.0.0
   url_launcher: ^6.2.1
+  dio: ^5.9.0
+  dio_web_adapter: ^2.1.1
 
 dev_dependencies:
   flutter_test:

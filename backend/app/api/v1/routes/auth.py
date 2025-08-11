@@ -3,7 +3,7 @@ from datetime import timedelta
 from fastapi import APIRouter, Depends, status, HTTPException
 from starlette.responses import JSONResponse
 
-from app.api.v1.schemas.auth import LoginResponse, UserResponse, LoginRequest
+from app.api.v1.schemas.auth import LoginResponse, UserResponse, LoginRequest, GroupResponse
 from app.api.v1.schemas.response import ResponseSingle
 from app.config import app_config
 from app.db.models.user import User
@@ -38,7 +38,9 @@ async def login(user: User = Depends(authenticate_user)) -> JSONResponse:
     access_token = create_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
-    data = LoginResponse(access_token=access_token, token_type="bearer")
+    user_response = UserResponse(id=str(user.id), username=user.username,
+                                 groups=[GroupResponse(id=str(group.id), name=group.name) for group in user.groups])
+    data = LoginResponse(access_token=access_token, token_type="bearer", user=user_response)
     content = ResponseSingle(data=data)
 
     response = JSONResponse(content=content.model_dump())
@@ -46,6 +48,12 @@ async def login(user: User = Depends(authenticate_user)) -> JSONResponse:
 
     return response
 
+@auth_router.post("/logout")
+async def logout():
+    response = JSONResponse(content=ResponseSingle(data=True).model_dump())
+    response.delete_cookie(key="access_token")
+
+    return response
 
 @auth_router.post("/register")
 async def register(login_data: LoginRequest, user_repository: UserRepository = Depends(UserRepository)):
@@ -60,7 +68,8 @@ async def register(login_data: LoginRequest, user_repository: UserRepository = D
 
 
 @auth_router.get("/me")
-async def me(user: dict = Depends(get_current_user)):
-    user_response = UserResponse.model_validate(user)
+async def me(user: User = Depends(get_current_user)):
+    user_response = UserResponse(id=str(user.id), username=user.username,
+                                 groups=[GroupResponse(id=str(group.id), name=group.name) for group in user.groups])
 
     return ResponseSingle(data=user_response)
