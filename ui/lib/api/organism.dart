@@ -3,12 +3,14 @@ import 'package:geneweb/api/api_service.dart';
 class NewOrganism {
   final String id;
   final String name;
+  final String? description;
   final String filename;
   final bool public;
 
   const NewOrganism(
       {required this.id,
       required this.name,
+      this.description,
       required this.filename,
       required this.public});
 
@@ -17,10 +19,16 @@ class NewOrganism {
       {
         'id': String id,
         'name': String name,
+        'description': String description,
         'filename': String filename,
         'public': bool public
       } =>
-        NewOrganism(id: id, name: name, filename: filename, public: public),
+        NewOrganism(
+            id: id,
+            name: name,
+            description: description,
+            filename: filename,
+            public: public),
       _ => throw const FormatException('Failed to load organism.')
     };
   }

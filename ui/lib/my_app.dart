@@ -37,12 +37,10 @@ class MyApp extends StatelessWidget {
           useMaterial3: true,
         ),
         home: Builder(builder: (context) {
-          final apiService = ApiService();
-          apiService.get("/auth/me").then((response) async {
+          ApiService().get("/auth/me").then((response) {
             if (context.mounted) {
-              final user =
-                  User.fromJson(response.data as Map<String, dynamic>);
-              Provider.of<GeneModel>(context, listen: false).user = user;
+              final user = User.fromJson(response.data as Map<String, dynamic>);
+              GeneModel.of(context).user = user;
             }
           });
 

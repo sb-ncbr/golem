@@ -6,13 +6,13 @@ from app.schemas.base import BaseSchema
 class GroupResponse(BaseSchema):
     """Response schema for a user group."""
 
-    id: str
+    id: uuid.UUID
     name: str
 
 class UserResponse(BaseSchema):
     """Response schema for a user."""
 
-    id: str
+    id: uuid.UUID
     username: str
     groups: list[GroupResponse]
 

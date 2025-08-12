@@ -1,3 +1,6 @@
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 import 'package:dio_web_adapter/dio_web_adapter.dart';
 
@@ -62,6 +65,23 @@ class ApiService {
         data: data, queryParameters: queryParameters, options: options);
 
     return _handleRequest(response);
+  }
+
+  Future<Uint8List> download(
+    String path, {
+      Map<String, dynamic>? queryParameters
+    }
+  ) async {
+    final response = await dio.get(path, options: Options(
+        responseType: ResponseType.bytes
+      ));
+
+
+    if (response.statusCode == 200) {
+      return response.data;
+    } else {
+      throw Exception('Failed to download resource.');
+    }
   }
 
   ApiResponse _handleRequest(Response<dynamic> response) {

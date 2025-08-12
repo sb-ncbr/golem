@@ -11,7 +11,7 @@ from app.db.models.organism import Organism
 from app.schemas.base import BaseSchema
 
 
-class Filters(BaseSchema):
+class OrganismFilters(BaseSchema):
     """
     Filters for organisms.
     """
@@ -28,19 +28,19 @@ class OrganismRepository:
     def __init__(self, session: AsyncSession = Depends(db.get_session)) -> None:
         self.session = session
 
-    async def get(self, filters: Filters = None) -> list[Organism]:
+    async def get(self, filters: OrganismFilters = None) -> list[Organism]:
         """
         Get a list of filtered organisms.
 
         Args:
-            filters (Filters | None): Filters to apply.
+            filters (OrganismFilters | None): Filters to apply.
 
         Returns:
             list[Organism] | None: The list of organisms matching the filters.
 
         """
 
-        filters = filters or Filters()
+        filters = filters or OrganismFilters()
         group_ids = []
 
         if filters.user_id is not None:
@@ -63,7 +63,13 @@ class OrganismRepository:
         )
         organisms = await self.session.execute(statement)
 
-        return organisms.scalars().all()
+        return list(organisms.scalars().all())
+
+    async def get_by_filename(self, filename: str) -> Organism | None:
+        statement = select(Organism).where(Organism.filename == filename)
+        organism = await self.session.execute(statement)
+
+        return organism.scalars().first()
 
     async def create(self, organism: Organism) -> Organism:
         """

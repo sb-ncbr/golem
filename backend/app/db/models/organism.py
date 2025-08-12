@@ -12,8 +12,12 @@ class Organism(SQLModel, table=True):
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     name: str
+    description: str | None
     filename: str
     public: bool
 
-    groups: list[Group] = Relationship(back_populates="organisms", link_model=OrganismGroup,
-                                       sa_relationship_kwargs={"lazy": "selectin"})
+    groups: list[Group] = Relationship(
+        back_populates="organisms",
+        link_model=OrganismGroup,
+        sa_relationship_kwargs={"lazy": "selectin"},
+    )

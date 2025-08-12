@@ -13,8 +13,9 @@ class AppConfig:
     secret_key: str
     algorithm: str
     access_token_expire_minutes: int
-    default_admin_username: str = "admin"
-    default_admin_password: str = "admin"
+    data_dir: str
+    default_admin_username: str
+    default_admin_password: str
 
     def __post_init__(self):
         missing = [name.upper() for name, value in self.__dict__.items() if value in (None, "")]
@@ -36,12 +37,13 @@ class AppConfig:
 
         load_dotenv(env_file, verbose=True)
         return cls(
-            database_url=os.environ.get("DATABASE_URL"),
-            secret_key=os.environ.get("SECRET_KEY"),
-            algorithm=os.environ.get("ALGORITHM"),
-            access_token_expire_minutes=int(os.environ.get("ACCESS_TOKEN_EXPIRE_MINUTES")),
-            default_admin_username=os.environ.get("DEFAULT_ADMIN_USERNAME"),
-            default_admin_password=os.environ.get("DEFAULT_ADMIN_PASSWORD"),
+            database_url=os.environ.get("GOLEM_DATABASE_URL"),
+            secret_key=os.environ.get("GOLEM_SECRET_KEY"),
+            algorithm=os.environ.get("GOLEM_ALGORITHM"),
+            access_token_expire_minutes=int(os.environ.get("GOLEM_ACCESS_TOKEN_EXPIRE_MINUTES")),
+            data_dir=os.environ.get("GOLEM_DATA_DIR"),
+            default_admin_username=os.environ.get("GOLEM_DEFAULT_ADMIN_USERNAME"),
+            default_admin_password=os.environ.get("GOLEM_DEFAULT_ADMIN_PASSWORD"),
         )
 
 

@@ -5,8 +5,11 @@ import 'package:archive/archive.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:geneweb/analysis/organism.dart';
 import 'package:geneweb/analysis/organism_presets.dart';
+import 'package:geneweb/api/api_service.dart';
+import 'package:geneweb/api/organism.dart';
 import 'package:geneweb/genes/gene_list.dart';
 import 'package:geneweb/genes/gene_model.dart';
 import 'package:http/http.dart' as http;
@@ -48,6 +51,7 @@ class _SourcePanelState extends State<SourcePanel> {
 
   late final _model = GeneModel.of(context);
   late final _scaffoldMessenger = ScaffoldMessenger.of(context);
+  late Future<List<NewOrganism>> futureOrganisms;
 
   @override
   Widget build(BuildContext context) {
@@ -60,6 +64,29 @@ class _SourcePanelState extends State<SourcePanel> {
                 ? _buildLoad(context)
                 : _buildLoadedState(context));
   }
+
+  @override
+  void initState() {
+    super.initState();
+    futureOrganisms = fetchOrganisms();
+    context.read<GeneModel>().addListener(_onUserChanged);
+  }
+
+  @override
+  void dispose() {
+    context.read<GeneModel>().removeListener(_onUserChanged);
+    super.dispose();
+  }
+
+  void _onUserChanged() {
+    final isSignedIn = context.select<GeneModel, bool>((model) => model.isSignedIn);
+    if (!isSignedIn) {
+      setState(() {
+        futureOrganisms = fetchOrganisms();
+      });
+    }
+  }
+
 
   Widget _buildLoadingState() {
     return Column(
@@ -82,10 +109,38 @@ class _SourcePanelState extends State<SourcePanel> {
           runSpacing: 8.0,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            ...OrganismPresets.kOrganisms.where((o) => o.public || publicSite == false).map((organism) => _OrganismCard(
-                organism: organism,
-                onSelected: organism.filename == null ? null : () => _handleDownloadFasta(organism))),
-            if (!publicSite) TextButton(onPressed: _handlePickFastaFile, child: const Text('Load custom .fasta file…')),
+            FutureBuilder(
+                future: futureOrganisms,
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    return Wrap(
+                        spacing: 8.0,
+                        runSpacing: 8.0,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          ...snapshot.data!
+                              .map(((organism) => Organism(
+                                  name: organism.name,
+                                  description: organism.description,
+                                  filename: organism.filename,
+                                  public: organism.public)))
+                              .map(
+                                (organism) => _OrganismCard(
+                                    organism: organism,
+                                    onSelected: organism.filename == null
+                                        ? null
+                                        : () => _handleDownloadFasta(organism)),
+                              )
+                        ]);
+                  } else if (snapshot.hasError) {
+                    return Text('${snapshot.error}');
+                  }
+                  return const CircularProgressIndicator();
+                }),
+            if (!publicSite)
+              TextButton(
+                  onPressed: _handlePickFastaFile,
+                  child: const Text('Load custom .fasta file…')),
           ],
         ),
       ],
@@ -215,15 +270,15 @@ class _SourcePanelState extends State<SourcePanel> {
     }
   }
 
-  Future<Archive> _downloadAndUnarchive(String filename) async {
+  Future<Archive> _downloadAndUnarchive(Organism organism) async {
     try {
-      setState(() => _loadingMessage = 'Downloading $filename…');
+      setState(() => _loadingMessage = 'Downloading ${organism.filename}…');
       setState(() => _progress = null);
-      debugPrint('Preparing download of $filename');
+      debugPrint('Preparing download of ${organism.filename}');
       await Future.delayed(const Duration(milliseconds: 100));
 
-      final bytes =
-          await _downloadFile(Uri.https(kIsWeb ? Uri.base.authority : 'golem-dev.ncbr.muni.cz', 'datasets/$filename'));
+      final bytes = await ApiService().download('/organisms/${organism.filename}');
+
       debugPrint('Downloaded ${bytes.length ~/ (1024 * 1024)} MB');
       if (mounted) setState(() => _loadingMessage = 'Decompressing ${bytes.length ~/ (1024 * 1024)} MB…');
       if (mounted) setState(() => _progress = 0.7);
@@ -242,7 +297,7 @@ class _SourcePanelState extends State<SourcePanel> {
 
   Future<void> _handleDownloadFasta(Organism organism) async {
     try {
-      Archive? archive = await _downloadAndUnarchive(organism.filename!);
+      Archive? archive = await _downloadAndUnarchive(organism);
       final file = archive.firstWhere((f) => f.isFile); //StateError if not found
       final name = file.name.split('/').last;
       if (!name.endsWith('.fasta') && !name.endsWith('.fa')) {
