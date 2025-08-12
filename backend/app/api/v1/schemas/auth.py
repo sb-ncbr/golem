@@ -9,6 +9,7 @@ class GroupResponse(BaseSchema):
     id: uuid.UUID
     name: str
 
+
 class UserResponse(BaseSchema):
     """Response schema for a user."""
 
@@ -16,12 +17,14 @@ class UserResponse(BaseSchema):
     username: str
     groups: list[GroupResponse]
 
+
 class LoginResponse(BaseSchema):
     """Response schema for login endpoint."""
 
     access_token: str
     token_type: str
     user: UserResponse
+
 
 class LoginRequest(BaseSchema):
     """Request schema for login endpoint."""

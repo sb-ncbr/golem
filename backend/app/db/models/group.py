@@ -30,4 +30,6 @@ class Group(SQLModel, table=True):
     name: str
 
     users: list["User"] = Relationship(back_populates="groups", link_model=UserGroup)
-    organisms: list["Organism"] = Relationship(back_populates="groups", link_model=OrganismGroup)
+    organisms: list["Organism"] = Relationship(
+        back_populates="groups", link_model=OrganismGroup
+    )

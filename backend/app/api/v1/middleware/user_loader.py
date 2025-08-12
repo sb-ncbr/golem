@@ -12,7 +12,9 @@ RequestResponseEndpoint = Callable[[Request], Awaitable[Response]]
 class UserLoaderMiddleware(BaseHTTPMiddleware):
     """Middleware used for getting user from token stored in cookie."""
 
-    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
+    async def dispatch(
+        self, request: Request, call_next: RequestResponseEndpoint
+    ) -> Response:
         request.state.user = None
         token = request.cookies.get("access_token")
 

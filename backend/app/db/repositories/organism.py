@@ -44,10 +44,15 @@ class OrganismRepository:
         group_ids = []
 
         if filters.user_id is not None:
-            user_groups = (await self.session.execute(
-                select(UserGroup)
-                .where(UserGroup.user_id == filters.user_id)
-            )).scalars().all()
+            user_groups = (
+                (
+                    await self.session.execute(
+                        select(UserGroup).where(UserGroup.user_id == filters.user_id)
+                    )
+                )
+                .scalars()
+                .all()
+            )
             group_ids = [group.group_id for group in user_groups]
 
         statement = (
@@ -57,7 +62,7 @@ class OrganismRepository:
             .where(
                 or_(
                     OrganismGroup.group_id.in_(group_ids),
-                    filters.include_public and Organism.public == True
+                    filters.include_public and Organism.public == True,
                 )
             )
         )

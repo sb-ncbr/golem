@@ -15,7 +15,9 @@ from app.config import app_config
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # handles JWT token authentication via cookie
-oauth2_scheme = OAuth2PasswordBearerWithCookie(tokenUrl="/v1/auth/login", auto_error=False)
+oauth2_scheme = OAuth2PasswordBearerWithCookie(
+    tokenUrl="/v1/auth/login", auto_error=False
+)
 
 ADMINISTRATORS_GROUP = "administrators"
 
@@ -69,13 +71,17 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
         expire = datetime.now(timezone.utc) + timedelta(minutes=15)
 
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, app_config.secret_key, algorithm=app_config.algorithm)
+    encoded_jwt = jwt.encode(
+        to_encode, app_config.secret_key, algorithm=app_config.algorithm
+    )
 
     return encoded_jwt
 
 
-async def authenticate_user(form_data: OAuth2PasswordRequestForm = Depends(),
-                            user_repository: UserRepository = Depends(UserRepository)) -> User | None:
+async def authenticate_user(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    user_repository: UserRepository = Depends(UserRepository),
+) -> User | None:
     """
     Authenticate a user.
 
@@ -97,8 +103,11 @@ async def authenticate_user(form_data: OAuth2PasswordRequestForm = Depends(),
 
 
 # TODO: move some logic to the user_loader middleware
-async def get_current_user(request: Request, token: HTTPAuthorizationCredentials = Depends(oauth2_scheme),
-                           user_repository: UserRepository = Depends(UserRepository)) -> User:
+async def get_current_user(
+    request: Request,
+    token: HTTPAuthorizationCredentials = Depends(oauth2_scheme),
+    user_repository: UserRepository = Depends(UserRepository),
+) -> User:
     """
     Get the current user based on the token.
 
@@ -138,8 +147,11 @@ async def get_current_user(request: Request, token: HTTPAuthorizationCredentials
     return user
 
 
-async def get_current_user_optional(request: Request, token: HTTPAuthorizationCredentials = Depends(oauth2_scheme),
-                                    user_repository: UserRepository = Depends(UserRepository)) -> User | None:
+async def get_current_user_optional(
+    request: Request,
+    token: HTTPAuthorizationCredentials = Depends(oauth2_scheme),
+    user_repository: UserRepository = Depends(UserRepository),
+) -> User | None:
     """
     Get the current user based on the token without throwing an exception.
 
@@ -154,8 +166,11 @@ async def get_current_user_optional(request: Request, token: HTTPAuthorizationCr
         return None
 
 
-async def get_current_admin_user(request: Request, token: HTTPAuthorizationCredentials = Depends(oauth2_scheme),
-                                 user_repository: UserRepository = Depends(UserRepository)) -> User | None:
+async def get_current_admin_user(
+    request: Request,
+    token: HTTPAuthorizationCredentials = Depends(oauth2_scheme),
+    user_repository: UserRepository = Depends(UserRepository),
+) -> User | None:
     """
     Get the current admin user based on the token.
 
@@ -199,7 +214,9 @@ def is_admin(user: User) -> bool:
     Returns:
         bool: True if the user is an admin, False otherwise.
     """
-    return user is not None and any(group.name == ADMINISTRATORS_GROUP for group in user.groups)
+    return user is not None and any(
+        group.name == ADMINISTRATORS_GROUP for group in user.groups
+    )
 
 
 def decode_token(token: str) -> dict:

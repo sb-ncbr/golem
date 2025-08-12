@@ -18,7 +18,9 @@ class AppConfig:
     default_admin_password: str
 
     def __post_init__(self):
-        missing = [name.upper() for name, value in self.__dict__.items() if value in (None, "")]
+        missing = [
+            name.upper() for name, value in self.__dict__.items() if value in (None, "")
+        ]
         if missing:
             raise ValueError(f"Missing environment variable(s): {', '.join(missing)}")
 
@@ -40,7 +42,9 @@ class AppConfig:
             database_url=os.environ.get("GOLEM_DATABASE_URL"),
             secret_key=os.environ.get("GOLEM_SECRET_KEY"),
             algorithm=os.environ.get("GOLEM_ALGORITHM"),
-            access_token_expire_minutes=int(os.environ.get("GOLEM_ACCESS_TOKEN_EXPIRE_MINUTES")),
+            access_token_expire_minutes=int(
+                os.environ.get("GOLEM_ACCESS_TOKEN_EXPIRE_MINUTES")
+            ),
             data_dir=os.environ.get("GOLEM_DATA_DIR"),
             default_admin_username=os.environ.get("GOLEM_DEFAULT_ADMIN_USERNAME"),
             default_admin_password=os.environ.get("GOLEM_DEFAULT_ADMIN_PASSWORD"),

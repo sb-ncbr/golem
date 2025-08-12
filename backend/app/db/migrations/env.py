@@ -2,7 +2,9 @@ import os
 import sys
 
 # adding project root to the sys.path so that the migrations can be run from anywhere
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
+sys.path.insert(
+    0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+)
 
 import asyncio
 from logging.config import fileConfig

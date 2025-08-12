@@ -4,7 +4,9 @@ from typing import Optional
 
 
 class OAuth2PasswordBearerWithCookie(OAuth2PasswordBearer):
-    async def __call__(self, request: Request) -> Optional[HTTPAuthorizationCredentials]:
+    async def __call__(
+        self, request: Request
+    ) -> Optional[HTTPAuthorizationCredentials]:
         token = request.cookies.get("access_token")
 
         if not token:

@@ -14,5 +14,8 @@ class User(SQLModel, table=True):
     username: str
     hashed_password: str
 
-    groups: list[Group] = Relationship(back_populates="users", link_model=UserGroup,
-                                       sa_relationship_kwargs={"lazy": "selectin"})
+    groups: list[Group] = Relationship(
+        back_populates="users",
+        link_model=UserGroup,
+        sa_relationship_kwargs={"lazy": "selectin"},
+    )
