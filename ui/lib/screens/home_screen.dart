@@ -5,9 +5,11 @@ import 'package:geneweb/my_app.dart';
 import 'package:geneweb/screens/lock_screen.dart';
 import 'package:geneweb/widgets/home.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
+  final adminUrl = const String.fromEnvironment("GOLEM_ADMIN_URL");
 
   @override
   Widget build(BuildContext context) {
@@ -56,6 +58,15 @@ class HomeScreen extends StatelessWidget {
                             style:
                                 const TextStyle(fontStyle: FontStyle.italic)),
                       ),
+                      if (GeneModel.of(context).isAdmin)
+                        IconButton(
+                            icon: const Icon(Icons.admin_panel_settings, size: 30),
+                            onPressed: () async {
+                              await launchUrl(
+                                Uri.parse(adminUrl),
+                                webOnlyWindowName: '_blank'
+                                );
+                            }),
                       if (GeneModel.of(context).isSignedIn)
                         IconButton(
                             icon: const Icon(Icons.logout, size: 30),
@@ -74,7 +85,7 @@ class HomeScreen extends StatelessWidget {
                                   MaterialPageRoute(
                                       builder: (context) =>
                                           const LockScreen()));
-                            })
+                            }),
                     ],
                   )),
             )

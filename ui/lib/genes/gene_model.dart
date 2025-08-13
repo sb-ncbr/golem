@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geneweb/analysis/analysis_series.dart';
@@ -35,6 +36,11 @@ class GeneModel extends ChangeNotifier {
 
   // Check if user is signed in
   bool get isSignedIn => _user != null;
+  bool get isAdmin =>
+      isSignedIn &&
+      _user!.groups
+              .firstWhereOrNull((group) => group.name == 'administrators') !=
+          null;
 
   /// Flag that the analyis has been cancelled by the user
   bool get analysisCancelled => _analysisCancelled;
