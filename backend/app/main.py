@@ -1,10 +1,11 @@
 """Main module."""
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from starlette_admin.contrib.sqlmodel import Admin
 
 from app.admin.admin_base import AdminViewBase, AdminIndexView
+from app.api.v1.middleware.exception import http_exception_handler
 from app.api.v1.middleware.user_loader import UserLoaderMiddleware
 from app.api.v1.routes.auth import auth_router
 from app.api.v1.routes.organisms import organisms_router
@@ -26,6 +27,7 @@ def _setup_middleware(app: FastAPI) -> None:
         allow_headers=["*"],
     )
     app.add_middleware(UserLoaderMiddleware)
+    app.add_exception_handler(HTTPException, http_exception_handler)
 
 
 def _setup_routes(app: FastAPI) -> None:

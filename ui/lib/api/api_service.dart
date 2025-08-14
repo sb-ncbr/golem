@@ -1,10 +1,9 @@
-import 'dart:io';
-import 'dart:typed_data';
+import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:dio_web_adapter/dio_web_adapter.dart';
 
-class ApiResponse {
+class ApiResponse<T extends dynamic> {
   final bool success;
   final dynamic data;
   final String message;
@@ -49,10 +48,13 @@ class ApiService {
     Map<String, dynamic>? queryParameters,
     Options? options,
   }) async {
-    final response = await dio.get(path,
-        data: data, queryParameters: queryParameters, options: options);
-
-    return _handleRequest(response);
+    try {
+      final response = await dio.get(path,
+          data: data, queryParameters: queryParameters, options: options);
+      return ApiResponse.fromJson(response.data);
+    } catch (e) {
+      return _handleResponseError(e);
+    }
   }
 
   Future<ApiResponse> post(
@@ -61,35 +63,43 @@ class ApiService {
     Map<String, dynamic>? queryParameters,
     Options? options,
   }) async {
-    final response = await dio.post(path,
-        data: data, queryParameters: queryParameters, options: options);
-
-    return _handleRequest(response);
-  }
-
-  Future<Uint8List> download(
-    String path, {
-      Map<String, dynamic>? queryParameters
-    }
-  ) async {
-    final response = await dio.get(path, options: Options(
-        responseType: ResponseType.bytes
-      ));
-
-
-    if (response.statusCode == 200) {
-      return response.data;
-    } else {
-      throw Exception('Failed to download resource.');
-    }
-  }
-
-  ApiResponse _handleRequest(Response<dynamic> response) {
-    if (response.statusCode == 200) {
+    try {
+      final response = await dio.post(path,
+          data: data, queryParameters: queryParameters, options: options);
       return ApiResponse.fromJson(response.data);
-    } else {
-      throw Exception('Failed to fetch resource.');
+    } catch (e) {
+      return _handleResponseError(e);
     }
+  }
+
+  Future<ApiResponse> download(String path,
+      {Map<String, dynamic>? queryParameters}) async {
+    try {
+      final response = await dio.get(path,
+          options: Options(responseType: ResponseType.bytes));
+
+      return ApiResponse.success(response.data);
+    } catch (e) {
+      if (e is DioException) {
+        if (e.response != null) {
+          // we need to decode the json as the response type is bytes
+          // in case of download
+          final jsonString = utf8.decode(e.response!.data);
+          return ApiResponse.fromJson(
+              json.decode(jsonString) as Map<String, dynamic>);
+        }
+      }
+      return _handleResponseError(e);
+    }
+  }
+
+  ApiResponse _handleResponseError(Object e) {
+    if (e is DioException) {
+      if (e.response != null) {
+        return ApiResponse.fromJson(e.response!.data);
+      }
+    }
+    return ApiResponse.error('Something went wrong.');
   }
 
   Dio _setupDio() {
@@ -97,8 +107,9 @@ class ApiService {
     adapter.withCredentials = true;
 
     final options = BaseOptions(
-        baseUrl: 'http://localhost:8000/api/v1',
-        headers: {'Accept': 'application/json'});
+      baseUrl: '${const String.fromEnvironment('GOLEM_API_URL')}/api/v1',
+      headers: {'Accept': 'application/json'},
+    );
     dio = Dio(options);
     dio.httpClientAdapter = adapter;
     dio.interceptors.add(LogInterceptor(responseBody: true));

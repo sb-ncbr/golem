@@ -100,10 +100,10 @@ class __LockState extends State<_Lock> {
     final formData =
         FormData.fromMap({'username': username, 'password': password});
 
-    final apiService = ApiService();
-    final loginResponse = await apiService.post('/auth/login', data: formData);
+    final loginResponse =
+        await ApiService().post('/auth/login', data: formData);
 
-    if (!loginResponse.success && mounted) {
+    if (!loginResponse.success) {
       return _showMessage(loginResponse.message);
     } else if (mounted) {
       final user = User.fromJson(loginResponse.data['user']);

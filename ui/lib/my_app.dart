@@ -4,7 +4,6 @@ import 'package:geneweb/api/api_service.dart';
 import 'package:geneweb/api/auth.dart';
 import 'package:geneweb/genes/gene_model.dart';
 import 'package:geneweb/screens/home_screen.dart';
-import 'package:geneweb/screens/lock_screen.dart';
 import 'package:provider/provider.dart';
 
 class MyApp extends StatelessWidget {
@@ -38,7 +37,7 @@ class MyApp extends StatelessWidget {
         ),
         home: Builder(builder: (context) {
           ApiService().get("/auth/me").then((response) {
-            if (context.mounted) {
+            if (context.mounted && response.success) {
               final user = User.fromJson(response.data as Map<String, dynamic>);
               GeneModel.of(context).user = user;
             }

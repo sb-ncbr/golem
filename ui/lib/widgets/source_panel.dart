@@ -68,7 +68,7 @@ class _SourcePanelState extends State<SourcePanel> {
   @override
   void initState() {
     super.initState();
-    futureOrganisms = fetchOrganisms();
+    futureOrganisms = _fetchOrganisms();
     context.read<GeneModel>().addListener(_onUserChanged);
   }
 
@@ -82,7 +82,7 @@ class _SourcePanelState extends State<SourcePanel> {
     final isSignedIn = context.select<GeneModel, bool>((model) => model.isSignedIn);
     if (!isSignedIn) {
       setState(() {
-        futureOrganisms = fetchOrganisms();
+        futureOrganisms = _fetchOrganisms();
       });
     }
   }
@@ -277,7 +277,18 @@ class _SourcePanelState extends State<SourcePanel> {
       debugPrint('Preparing download of ${organism.filename}');
       await Future.delayed(const Duration(milliseconds: 100));
 
-      final bytes = await ApiService().download('/organisms/${organism.filename}');
+      final response =
+          await ApiService().download('/organisms/${organism.filename}');
+
+      if (!response.success) {
+        _scaffoldMessenger.showSnackBar(SnackBar(
+          content: Text(response.message),
+          backgroundColor: Colors.red,
+        ));
+        throw Exception(response.message);
+      }
+
+      Uint8List bytes = response.data;
 
       debugPrint('Downloaded ${bytes.length ~/ (1024 * 1024)} MB');
       if (mounted) setState(() => _loadingMessage = 'Decompressing ${bytes.length ~/ (1024 * 1024)} MB…');
@@ -402,6 +413,14 @@ class _SourcePanelState extends State<SourcePanel> {
     } finally {
       setState(() => _loadingMessage = null);
     }
+  }
+
+  Future<List<NewOrganism>> _fetchOrganisms() async {
+    return fetchOrganisms(
+        onError: (message) => _scaffoldMessenger.showSnackBar(SnackBar(
+              content: Text(message),
+              backgroundColor: Colors.red,
+            )));
   }
 }
 

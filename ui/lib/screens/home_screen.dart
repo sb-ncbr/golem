@@ -9,7 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
-  final adminUrl = const String.fromEnvironment("GOLEM_ADMIN_URL");
+  final adminUrl = '${const String.fromEnvironment('GOLEM_API_URL')}/admin';
 
   @override
   Widget build(BuildContext context) {
@@ -71,8 +71,9 @@ class HomeScreen extends StatelessWidget {
                         IconButton(
                             icon: const Icon(Icons.logout, size: 30),
                             onPressed: () async {
-                              await ApiService().post("/auth/logout");
-                              if (context.mounted) {
+                              final logoutResponse =
+                                  await ApiService().post("/auth/logout");
+                              if (context.mounted && logoutResponse.success) {
                                 GeneModel.of(context).user = null;
                               }
                             })

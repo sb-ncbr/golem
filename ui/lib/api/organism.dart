@@ -34,8 +34,15 @@ class NewOrganism {
   }
 }
 
-Future<List<NewOrganism>> fetchOrganisms() async {
+Future<List<NewOrganism>> fetchOrganisms({
+  Function(String)? onError,
+}) async {
   final response = await ApiService().get('/organisms');
+
+  if (!response.success) {
+    onError?.call(response.message);
+    return [];
+  }
 
   return (response.data as List<dynamic>)
       .map((organism) => NewOrganism.fromJson(organism as Map<String, dynamic>))
