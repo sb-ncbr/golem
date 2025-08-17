@@ -49,7 +49,7 @@ async def login(user: User = Depends(authenticate_user)) -> JSONResponse:
     )
     content = ResponseSingle(data=data)
 
-    response = JSONResponse(content=content.model_dump(mode="json"))
+    response = JSONResponse(content=content.model_dump(mode="json", by_alias=True))
     response.set_cookie(key="access_token", value=access_token, httponly=True)
 
     return response

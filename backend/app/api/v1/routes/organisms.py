@@ -48,7 +48,7 @@ async def download_organism(
     organism = next(
         (organism for organism in organisms if organism.filename == filename), None
     )
-    not_found_exception = HTTPException(status_code=404, detail="Organism not found 0")
+    not_found_exception = HTTPException(status_code=404, detail="Organism not found")
 
     if organism is None:
         raise not_found_exception
@@ -57,8 +57,9 @@ async def download_organism(
         raise not_found_exception
 
     organism_groups = [group.name for group in organism.groups]
+    user_groups = user.groups if user is not None else []
     has_group_access = any(
-        group for group in user.groups if group.name in organism_groups
+        group for group in user_groups if group.name in organism_groups
     )
     if not organism.public and not has_group_access:
         raise not_found_exception

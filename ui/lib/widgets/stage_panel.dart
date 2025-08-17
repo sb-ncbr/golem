@@ -1,8 +1,13 @@
+import 'package:collection/collection.dart';
+import 'package:faabul_color_picker/faabul_color_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:geneweb/api/auth.dart';
 import 'package:geneweb/genes/stage_selection.dart';
 import 'package:geneweb/genes/gene_list.dart';
 import 'package:geneweb/genes/gene_model.dart';
+import 'package:geneweb/utilities/color_row_parser.dart';
+import 'package:geneweb/utilities/message.dart';
 import 'package:provider/provider.dart';
 import 'package:truncate/truncate.dart';
 
@@ -90,9 +95,7 @@ class _StagePanelState extends State<StagePanel> {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final allStagesKeys = context.select<GeneModel, List<String>>((model) => model.sourceGenes?.stageKeys ?? []);
     final allowFilter = context.select<GeneModel, bool>((model) => model.sourceGenes?.stages == null);
-    final stageColors = context.select<GeneModel, Map<String, Color>>((model) => model.sourceGenes?.colors ?? {});
     final sourceGenes = context.select<GeneModel, GeneList?>((model) => model.sourceGenes);
     if (sourceGenes == null) return const Center(child: Text('Load source data first'));
     return Align(
@@ -116,19 +119,24 @@ class _StagePanelState extends State<StagePanel> {
             Text('Distribution of the motif in genes with elevated transcript levels in certain developmental stage.',
                 style: textTheme.bodySmall),
             const SizedBox(height: 16),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final key in allStagesKeys)
-                  _StageCard(
-                    name: key,
-                    color: stageColors[key],
-                    isSelected: _selectedStages.contains(key) == true,
-                    onToggle: (value) => _handleToggle(key, value),
-                  ),
-              ],
-            ),
+            Consumer<GeneModel>(builder: (context, model, child) {
+              final allStagesKeys = model.sourceGenes?.stageKeys ?? [];
+              final sourceGenes = model.sourceGenes;
+
+              return Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final key in allStagesKeys)
+                    _StageCard(
+                      name: key,
+                      color: sourceGenes?.colors[key],
+                      isSelected: _selectedStages.contains(key) == true,
+                      onToggle: (value) => _handleToggle(key, value),
+                    ),
+                ],
+              );
+            }),
             if (allowFilter) ...[
               const SizedBox(height: 16),
               Text('Choose the transcript level based on TPM:', style: textTheme.titleSmall),
@@ -272,12 +280,48 @@ class _StageCard extends StatelessWidget {
                   style: textTheme.titleSmall?.copyWith(color: textColor),
                   maxLines: 3,
                 ),
-                Checkbox(value: isSelected, onChanged: (value) => onToggle(value!))
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Checkbox(
+                        value: isSelected,
+                        onChanged: (value) => onToggle(value!)),
+                    if (GeneModel.of(context).isSignedIn)
+                      InkWell(
+                        onTap: () => _showColorPickerDialog(context, name),
+                        child: Container(
+                          width: 24,
+                          height: 24,
+                          margin: const EdgeInsets.only(right: 10),
+                          decoration: BoxDecoration(
+                            color: backgroundColor,
+                            border: Border.all(color: Colors.white),
+                            borderRadius: BorderRadius.circular(7),
+                          ),
+                        ),
+                      ),
+                  ],
+                )
               ],
             ),
           ),
         ),
       ),
     );
+  }
+
+    void _showColorPickerDialog(BuildContext context, String stage) {
+    showColorPickerDialog(context: context, selected: color ?? Colors.grey)
+        .then((newColor) async {
+      if (newColor != null) {
+        final response = await StagePreference.updatePreference(
+            StagePreference(stageName: name, color: newColor.toHex()));
+        if (!response.success && context.mounted) {
+          context.showMessage(response.message);
+        } else if (context.mounted) {
+          GeneModel.of(context).setStagePreferenceColor(stage, newColor.toHex());
+        }
+      }
+    });
   }
 }

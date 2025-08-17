@@ -37,7 +37,7 @@ class NewOrganism {
 Future<List<NewOrganism>> fetchOrganisms({
   Function(String)? onError,
 }) async {
-  final response = await ApiService().get('/organisms');
+  final response = await ApiService.instance.get('/organisms');
 
   if (!response.success) {
     onError?.call(response.message);

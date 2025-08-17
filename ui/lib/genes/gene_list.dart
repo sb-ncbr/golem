@@ -1,8 +1,10 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:geneweb/analysis/organism.dart';
+import 'package:geneweb/api/auth.dart';
 import 'package:geneweb/genes/stage_selection.dart';
 import 'package:geneweb/genes/gene.dart';
+import 'package:geneweb/utilities/color_row_parser.dart';
 import 'package:geneweb/utilities/series.dart';
 import 'dart:math';
 
@@ -42,6 +44,7 @@ class GeneList extends Equatable {
     required this.stages,
     required Map<String, Color>? colors,
     required this.errors,
+
   })  : _genes = genes,
         transcriptionRates = _transcriptionRates(genes),
         _colors = colors;
@@ -106,14 +109,14 @@ class GeneList extends Equatable {
   /// Create a new GeneList from list of genes.
   ///
   /// Obtain the list by calling [parseFasta]
-  factory GeneList.fromList({required List<Gene> genes, required List<dynamic> errors, Organism? organism}) {
+  factory GeneList.fromList({required List<Gene> genes, required List<dynamic> errors, Organism? organism, Map<String, Color>? colors}) {
     GeneList result;
     result = GeneList._(
       organism: organism,
       genes: genes,
       errors: errors,
+      colors: colors,
       stages: null,
-      colors: null,
     );
     debugPrint('.fasta analysis completed with ${result.genes.length} genes and ${result.errors.length} errors');
     return result;

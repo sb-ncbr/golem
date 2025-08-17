@@ -5,14 +5,20 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette_admin.contrib.sqlmodel import Admin
 
 from app.admin.admin_base import AdminViewBase, AdminIndexView
+from app.admin.stage_preference_admin import (
+    UserStagePreferenceAdminView,
+    DefaultStagePreferenceAdminView,
+)
 from app.api.v1.middleware.exception import http_exception_handler
 from app.api.v1.middleware.user_loader import UserLoaderMiddleware
 from app.api.v1.routes.auth import auth_router
 from app.api.v1.routes.organisms import organisms_router
+from app.api.v1.routes.preferences import preferences_router
 from app.api.v1.routes.test import test_router
 from app.db.db import engine, add_default_admin_lifespan
 from app.db.models.group import Group
 from app.db.models.organism import Organism
+from app.db.models.stage_preference import UserStagePreference, DefaultStagePreference
 from app.db.models.user import User
 
 V1_PREFIX = "/api/v1"
@@ -34,6 +40,7 @@ def _setup_routes(app: FastAPI) -> None:
     app.include_router(router=test_router, prefix=V1_PREFIX)
     app.include_router(router=auth_router, prefix=V1_PREFIX)
     app.include_router(router=organisms_router, prefix=V1_PREFIX)
+    app.include_router(router=preferences_router, prefix=V1_PREFIX)
 
 
 def _setup_admin(app: FastAPI) -> None:
@@ -46,6 +53,8 @@ def _setup_admin(app: FastAPI) -> None:
     admin.add_view(AdminViewBase(Group))
     admin.add_view(AdminViewBase(Organism))
     admin.add_view(AdminViewBase(User))
+    admin.add_view(UserStagePreferenceAdminView(UserStagePreference))
+    admin.add_view(DefaultStagePreferenceAdminView(DefaultStagePreference))
 
     admin.mount_to(app)
 

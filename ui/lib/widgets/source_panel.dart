@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:archive/archive.dart';
+import 'package:collection/collection.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -79,8 +80,8 @@ class _SourcePanelState extends State<SourcePanel> {
   }
 
   void _onUserChanged() {
-    final isSignedIn = context.select<GeneModel, bool>((model) => model.isSignedIn);
-    if (!isSignedIn) {
+    final geneModel = context.read<GeneModel>();
+    if (!geneModel.isSignedIn) {
       setState(() {
         futureOrganisms = _fetchOrganisms();
       });
@@ -278,7 +279,7 @@ class _SourcePanelState extends State<SourcePanel> {
       await Future.delayed(const Duration(milliseconds: 100));
 
       final response =
-          await ApiService().download('/organisms/${organism.filename}');
+          await ApiService.instance.download('/organisms/${organism.filename}');
 
       if (!response.success) {
         _scaffoldMessenger.showSnackBar(SnackBar(
@@ -327,6 +328,9 @@ class _SourcePanelState extends State<SourcePanel> {
         progressCallback: (value) => setState(() => _progress = 0.8 + value * 0.2),
       );
       debugPrint('Finished loading');
+
+      if (!mounted) return;
+
       if (_model.sourceGenes!.errors.isEmpty) {
         _scaffoldMessenger.showSnackBar(SnackBar(content: Text('Imported ${_model.sourceGenes?.genes.length} genes.')));
       } else {
@@ -417,10 +421,12 @@ class _SourcePanelState extends State<SourcePanel> {
 
   Future<List<NewOrganism>> _fetchOrganisms() async {
     return fetchOrganisms(
-        onError: (message) => _scaffoldMessenger.showSnackBar(SnackBar(
-              content: Text(message),
-              backgroundColor: Colors.red,
-            )));
+            onError: (message) => _scaffoldMessenger.showSnackBar(SnackBar(
+                  content: Text(message),
+                  backgroundColor: Colors.red,
+                )))
+        // TODO: add proper ordering
+        .then((value) => value.sorted((a, b) => a.name.compareTo(b.name)));
   }
 }
 

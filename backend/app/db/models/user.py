@@ -3,6 +3,7 @@ import uuid
 from sqlmodel import SQLModel, Field, Relationship
 
 from app.db.models.group import Group, UserGroup
+from app.db.models.stage_preference import UserStagePreference
 
 
 class User(SQLModel, table=True):
@@ -17,5 +18,9 @@ class User(SQLModel, table=True):
     groups: list[Group] = Relationship(
         back_populates="users",
         link_model=UserGroup,
+        sa_relationship_kwargs={"lazy": "selectin"},
+    )
+    stage_preferences: list[UserStagePreference] = Relationship(
+        back_populates="user",
         sa_relationship_kwargs={"lazy": "selectin"},
     )

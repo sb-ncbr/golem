@@ -36,10 +36,16 @@ class ApiResponse<T extends dynamic> {
 }
 
 class ApiService {
-  late Dio dio;
+  late final Dio dio;
+  static ApiService? _instance;
 
-  ApiService() {
+  ApiService._internal() {
     dio = _setupDio();
+  }
+
+  static ApiService get instance {
+    _instance ??= ApiService._internal();
+    return _instance!;
   }
 
   Future<ApiResponse> get(
@@ -65,6 +71,21 @@ class ApiService {
   }) async {
     try {
       final response = await dio.post(path,
+          data: data, queryParameters: queryParameters, options: options);
+      return ApiResponse.fromJson(response.data);
+    } catch (e) {
+      return _handleResponseError(e);
+    }
+  }
+
+  Future<ApiResponse> put(
+    String path, {
+    Object? data,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+  }) async {
+    try {
+      final response = await dio.put(path,
           data: data, queryParameters: queryParameters, options: options);
       return ApiResponse.fromJson(response.data);
     } catch (e) {
@@ -110,7 +131,7 @@ class ApiService {
       baseUrl: '${const String.fromEnvironment('GOLEM_API_URL')}/api/v1',
       headers: {'Accept': 'application/json'},
     );
-    dio = Dio(options);
+    final dio = Dio(options);
     dio.httpClientAdapter = adapter;
     dio.interceptors.add(LogInterceptor(responseBody: true));
 

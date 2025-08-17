@@ -72,7 +72,7 @@ class HomeScreen extends StatelessWidget {
                             icon: const Icon(Icons.logout, size: 30),
                             onPressed: () async {
                               final logoutResponse =
-                                  await ApiService().post("/auth/logout");
+                                  await ApiService.instance.post("/auth/logout");
                               if (context.mounted && logoutResponse.success) {
                                 GeneModel.of(context).user = null;
                               }

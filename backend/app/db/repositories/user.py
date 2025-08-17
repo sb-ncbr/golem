@@ -51,3 +51,20 @@ class UserRepository:
         await self.session.refresh(user)
 
         return user
+
+    async def update(self, user: User) -> User:
+        """
+        Update an existing user.
+
+        Args:
+            user (User): The user to update.
+
+        Returns:
+            User: The updated user.
+        """
+
+        self.session.add(user)
+        await self.session.commit()
+        await self.session.refresh(user)
+
+        return user

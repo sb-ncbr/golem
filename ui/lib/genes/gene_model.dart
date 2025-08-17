@@ -12,6 +12,7 @@ import 'package:geneweb/genes/gene_list.dart';
 import 'package:geneweb/genes/stages_data.dart';
 import 'package:geneweb/genes/tpm_data.dart';
 import 'package:geneweb/my_app.dart';
+import 'package:geneweb/utilities/color_row_parser.dart';
 import 'package:provider/provider.dart';
 import 'package:universal_file/universal_file.dart';
 
@@ -31,6 +32,11 @@ class GeneModel extends ChangeNotifier {
 
   set user(User? value) {
     _user = value;
+
+    if (user == null) {
+      _reset();
+    }
+
     notifyListeners();
   }
 
@@ -115,6 +121,27 @@ class GeneModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setStagePreferenceColor(String stageName, String color) {
+    if (user == null) {
+      return;
+    }
+    final preferences = user!.preferences;
+    final preference =
+        preferences.firstWhereOrNull((pref) => pref.stageName == stageName);
+    if (preference != null) {
+      preference.color = color;
+    } else {
+      user!.preferences
+          .add(StagePreference(stageName: stageName, color: color));
+    }
+
+    if (sourceGenes != null) {
+      sourceGenes!.colors[stageName] = HexColor.fromHex(color);
+    }
+
+    notifyListeners();
+  }
+
   void setOptions(AnalysisOptions options) {
     analyses = [];
     analysisProgress = null;
@@ -167,7 +194,16 @@ class GeneModel extends ChangeNotifier {
       (genes, errors) =
           await GeneList.takeSingleTranscript(genes, errors, (value) => progressCallback(0.5 + value / 2));
     }
-    sourceGenes = GeneList.fromList(genes: genes, errors: errors, organism: organism);
+    
+    final defaultPreferences = await StagePreference.getDefaults();
+    final userPreferences = user?.preferences ?? [];
+    final preferences = [...defaultPreferences, ...userPreferences];
+    final colors = {
+      for (StagePreference preference in preferences)
+        preference.stageName: HexColor.fromHex(preference.color)
+    };
+
+    sourceGenes = GeneList.fromList(genes: genes, errors: errors, organism: organism, colors: colors);
     resetAnalysisOptions();
     resetFilter();
     notifyListeners();

@@ -5,12 +5,25 @@ class ColorRowParser {
   static List<Color?>? tryParse(List<dynamic> row) {
     final input = row.cast<String>();
 //    if (input.any((e) => e.isNotEmpty && !e.startsWith('#'))) return null;
-    final colors = input.map((e) {
-      if (e.isEmpty) return null;
-      final parsed = int.tryParse(e.substring(1), radix: 16);
-      if (parsed == null || parsed < 0 || parsed > 0xFFFFFF) return null;
-      return Color(parsed + 0xFF000000);
-    }).toList();
+    final colors = input.map((e) => HexColor.fromHex(e)).toList();
     return colors;
   }
+}
+
+/// https://stackoverflow.com/a/50081214
+extension HexColor on Color {
+  /// String is in the format "aabbcc" or "ffaabbcc" with an optional leading "#".
+  static Color fromHex(String hexString) {
+    final buffer = StringBuffer();
+    if (hexString.length == 6 || hexString.length == 7) buffer.write('ff');
+    buffer.write(hexString.replaceFirst('#', ''));
+    return Color(int.parse(buffer.toString(), radix: 16));
+  }
+
+  /// Prefixes a hash sign if [leadingHashSign] is set to `true` (default is `true`).
+  String toHex({bool leadingHashSign = true}) => '${leadingHashSign ? '#' : ''}'
+      '${(255 * a).toInt().toRadixString(16).padLeft(2, '0')}'
+      '${(255 * r).toInt().toRadixString(16).padLeft(2, '0')}'
+      '${(255 * g).toInt().toRadixString(16).padLeft(2, '0')}'
+      '${(255 * b).toInt().toRadixString(16).padLeft(2, '0')}';
 }

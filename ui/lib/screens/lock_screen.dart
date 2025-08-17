@@ -101,7 +101,7 @@ class __LockState extends State<_Lock> {
         FormData.fromMap({'username': username, 'password': password});
 
     final loginResponse =
-        await ApiService().post('/auth/login', data: formData);
+        await ApiService.instance.post('/auth/login', data: formData);
 
     if (!loginResponse.success) {
       return _showMessage(loginResponse.message);

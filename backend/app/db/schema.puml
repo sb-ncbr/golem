@@ -25,6 +25,12 @@ entity users_groups {
     *group_id: <<FK groups>>
 }
 
+entity user_stages_preferences {
+    *stage_name: varchar
+    *user_id: <<FK users>>
+    *color: varchar
+}
+
 entity organisms {
     *id: uuid
     ---
@@ -38,14 +44,21 @@ entity organisms_groups {
     *group_id: uuid
 }
 
+entity default_stages_preferences {
+    *stage_name: varchar
+    *color: varchar
+}
+
 entity alembic_version {
     *version_num: varchar
 }
 
-users  |o.. users_groups
-groups |o.. users_groups
+users  ||..o{ users_groups
+groups ||..o{ users_groups
 
-groups |o.. organisms_groups
-organisms |o.. organisms_groups
+users ||..o{ user_stages_preferences
+
+groups ||..o{ organisms_groups
+organisms ||..o{ organisms_groups
 
 @enduml

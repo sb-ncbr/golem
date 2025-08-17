@@ -19,6 +19,7 @@ from alembic import context
 from app.db.models.group import Group, OrganismGroup, UserGroup  # noqa
 from app.db.models.organism import Organism  # noqa
 from app.db.models.user import User  # noqa
+from app.db.models.stage_preference import DefaultStagePreference, UserStagePreference  # noqa
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

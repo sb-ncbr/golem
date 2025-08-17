@@ -1,5 +1,6 @@
 import uuid
 
+from app.api.v1.schemas.preference import PreferenceResponse
 from app.schemas.base import BaseSchema
 
 
@@ -16,6 +17,7 @@ class UserResponse(BaseSchema):
     id: uuid.UUID
     username: str
     groups: list[GroupResponse]
+    stage_preferences: list[PreferenceResponse]
 
 
 class LoginResponse(BaseSchema):
