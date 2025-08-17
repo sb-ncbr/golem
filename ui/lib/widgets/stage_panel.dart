@@ -112,6 +112,7 @@ class _StagePanelState extends State<StagePanel> {
               name: 'GENOME',
               color: null,
               isSelected: _selectedStages.contains(GeneModel.kAllStages) == true,
+              showPicker: false,
               onToggle: (value) => _handleToggle(GeneModel.kAllStages, value),
             ),
             const SizedBox(height: 16),
@@ -253,8 +254,9 @@ class _StageCard extends StatelessWidget {
   final String name;
   final Color? color;
   final bool isSelected;
+  final bool showPicker;
   final Function(bool value) onToggle;
-  const _StageCard({required this.name, required this.color, required this.isSelected, required this.onToggle});
+  const _StageCard({required this.name, required this.color, required this.isSelected, required this.onToggle, this.showPicker = true});
 
   @override
   Widget build(BuildContext context) {
@@ -286,7 +288,7 @@ class _StageCard extends StatelessWidget {
                     Checkbox(
                         value: isSelected,
                         onChanged: (value) => onToggle(value!)),
-                    if (GeneModel.of(context).isSignedIn)
+                    if (GeneModel.of(context).isSignedIn && showPicker)
                       InkWell(
                         onTap: () => _showColorPickerDialog(context, name),
                         child: Container(

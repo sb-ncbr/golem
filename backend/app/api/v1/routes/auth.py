@@ -7,7 +7,6 @@ from app.api.v1.schemas.auth import (
     LoginResponse,
     UserResponse,
     LoginRequest,
-    GroupResponse,
 )
 from app.api.v1.schemas.response import ResponseSingle
 from app.config import app_config

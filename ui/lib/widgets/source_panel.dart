@@ -123,7 +123,7 @@ class _SourcePanelState extends State<SourcePanel> {
                               .map(((organism) => Organism(
                                   name: organism.name,
                                   description: organism.description,
-                                  filename: organism.filename,
+                                  filename: organism.sequencesFilename,
                                   public: organism.public)))
                               .map(
                                 (organism) => _OrganismCard(
@@ -271,7 +271,7 @@ class _SourcePanelState extends State<SourcePanel> {
     }
   }
 
-  Future<Archive> _downloadAndUnarchive(Organism organism) async {
+  Future<List<int>> _downloadAndUnarchive(Organism organism) async {
     try {
       setState(() => _loadingMessage = 'Downloading ${organism.filename}…');
       setState(() => _progress = null);
@@ -295,9 +295,9 @@ class _SourcePanelState extends State<SourcePanel> {
       if (mounted) setState(() => _loadingMessage = 'Decompressing ${bytes.length ~/ (1024 * 1024)} MB…');
       if (mounted) setState(() => _progress = 0.7);
       await Future.delayed(const Duration(milliseconds: 100));
-      final archive = ZipDecoder().decodeBytes(bytes);
-      debugPrint('Decoded $archive');
-      return archive;
+      final decompressedXz = XZDecoder().decodeBytes(bytes);
+      debugPrint('Decompressed $decompressedXz');
+      return decompressedXz;
     } catch (_) {
       rethrow;
     }
@@ -309,21 +309,14 @@ class _SourcePanelState extends State<SourcePanel> {
 
   Future<void> _handleDownloadFasta(Organism organism) async {
     try {
-      Archive? archive = await _downloadAndUnarchive(organism);
-      final file = archive.firstWhere((f) => f.isFile); //StateError if not found
-      final name = file.name.split('/').last;
-      if (!name.endsWith('.fasta') && !name.endsWith('.fa')) {
-        throw StateError('Expected .fasta file, got $name');
-      }
-      debugPrint('Found $file');
-      final content = _fileContent(file);
+      final content = await _downloadAndUnarchive(organism);
       debugPrint('Decoded ${content.length ~/ (1024 * 1024)} MB of data');
-      archive = null; // unload from memory
-      if (mounted) setState(() => _loadingMessage = 'Analyzing $name (${content.length ~/ (1024 * 1024)} MB)…');
+      final filename = organism.filename?.replaceAll('.xz', '');
+      if (mounted) setState(() => _loadingMessage = 'Analyzing $filename (${content.length ~/ (1024 * 1024)} MB)…');
       if (mounted) setState(() => _progress = 0.8);
       await Future.delayed(const Duration(milliseconds: 100));
       await _model.loadFastaFromString(
-        data: content,
+        data: const Utf8Decoder().convert(content),
         organism: organism,
         progressCallback: (value) => setState(() => _progress = 0.8 + value * 0.2),
       );

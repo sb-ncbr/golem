@@ -5,10 +5,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette_admin.contrib.sqlmodel import Admin
 
 from app.admin.admin_base import AdminViewBase, AdminIndexView
+from app.admin.group_admin import GroupAdminView
+from app.admin.organism_admin import OrganismAdminView
 from app.admin.stage_preference_admin import (
     UserStagePreferenceAdminView,
     DefaultStagePreferenceAdminView,
 )
+from app.admin.user_admin import UserAdminView
 from app.api.v1.middleware.exception import http_exception_handler
 from app.api.v1.middleware.user_loader import UserLoaderMiddleware
 from app.api.v1.routes.auth import auth_router
@@ -50,9 +53,9 @@ def _setup_admin(app: FastAPI) -> None:
         index_view=AdminIndexView(label="GOLEM Admin", path="/"),
     )
 
-    admin.add_view(AdminViewBase(Group))
-    admin.add_view(AdminViewBase(Organism))
-    admin.add_view(AdminViewBase(User))
+    admin.add_view(GroupAdminView(Group))
+    admin.add_view(OrganismAdminView(Organism))
+    admin.add_view(UserAdminView(User))
     admin.add_view(UserStagePreferenceAdminView(UserStagePreference))
     admin.add_view(DefaultStagePreferenceAdminView(DefaultStagePreference))
 

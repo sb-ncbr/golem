@@ -133,7 +133,6 @@ class ApiService {
     );
     final dio = Dio(options);
     dio.httpClientAdapter = adapter;
-    dio.interceptors.add(LogInterceptor(responseBody: true));
 
     return dio;
   }

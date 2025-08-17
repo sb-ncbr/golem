@@ -13,7 +13,8 @@ class Organism(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     name: str
     description: str | None
-    filename: str
+    sequences_filename: str
+    metadata_filename: str
     public: bool
 
     groups: list[Group] = Relationship(
@@ -21,3 +22,18 @@ class Organism(SQLModel, table=True):
         link_model=OrganismGroup,
         sa_relationship_kwargs={"lazy": "selectin"},
     )
+
+    def __admin_repr__(self, request) -> str:
+        """
+        Used for displaying the Organism name instead of the UUID in the admin interface.
+        """
+        if not self.description:
+            return self.name
+
+        description = (
+            self.description
+            if len(self.description) < 10
+            else f"{self.description[:10]}..."
+        )
+
+        return f"{self.name} ({description})"

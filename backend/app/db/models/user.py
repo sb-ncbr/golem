@@ -12,7 +12,7 @@ class User(SQLModel, table=True):
     __tablename__ = "users"
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    username: str
+    username: str = Field(unique=True)
     hashed_password: str
 
     groups: list[Group] = Relationship(
@@ -24,3 +24,10 @@ class User(SQLModel, table=True):
         back_populates="user",
         sa_relationship_kwargs={"lazy": "selectin"},
     )
+
+    def __admin_repr__(self, request) -> str:
+        """
+        Used for displaying the username instead of the UUID in the admin interface.
+        """
+
+        return f"{self.username}"

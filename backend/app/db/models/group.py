@@ -27,9 +27,16 @@ class Group(SQLModel, table=True):
     __tablename__ = "groups"
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    name: str
+    name: str = Field(unique=True)
 
     users: list["User"] = Relationship(back_populates="groups", link_model=UserGroup)
     organisms: list["Organism"] = Relationship(
         back_populates="groups", link_model=OrganismGroup
     )
+
+    def __admin_repr__(self, request) -> str:
+        """
+        Used for displaying the group name instead of the UUID in the admin interface.
+        """
+
+        return f"{self.name}"

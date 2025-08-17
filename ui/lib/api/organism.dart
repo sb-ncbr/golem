@@ -4,14 +4,16 @@ class NewOrganism {
   final String id;
   final String name;
   final String? description;
-  final String filename;
+  final String sequencesFilename;
+  final String metadataFilename;
   final bool public;
 
   const NewOrganism(
       {required this.id,
       required this.name,
       this.description,
-      required this.filename,
+      required this.sequencesFilename,
+      required this.metadataFilename,
       required this.public});
 
   factory NewOrganism.fromJson(Map<String, dynamic> json) {
@@ -20,14 +22,16 @@ class NewOrganism {
         'id': String id,
         'name': String name,
         'description': String description,
-        'filename': String filename,
+        'sequencesFilename': String sequencesFilename,
+        'metadataFilename': String metadataFilename,
         'public': bool public
       } =>
         NewOrganism(
             id: id,
             name: name,
             description: description,
-            filename: filename,
+            sequencesFilename: sequencesFilename,
+            metadataFilename: metadataFilename,
             public: public),
       _ => throw const FormatException('Failed to load organism.')
     };

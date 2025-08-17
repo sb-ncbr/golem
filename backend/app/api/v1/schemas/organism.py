@@ -10,6 +10,7 @@ class OrganismResponse(BaseSchema):
     id: uuid.UUID
     name: str
     description: str | None
-    filename: str
+    sequences_filename: str
+    metadata_filename: str
     public: bool
     groups: list[GroupResponse]

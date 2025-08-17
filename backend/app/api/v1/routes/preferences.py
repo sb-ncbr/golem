@@ -2,9 +2,10 @@ from fastapi import APIRouter, HTTPException
 from fastapi.params import Depends
 
 from app.api.v1.schemas.preference import PreferenceUpdateRequest, PreferenceResponse
-from app.api.v1.schemas.response import ResponseSingle
-from app.db.models.stage_preference import StagePreference
+from app.api.v1.schemas.response import ResponseSingle, ResponseList
+from app.db.models.stage_preference import UserStagePreference
 from app.db.models.user import User
+from app.db.repositories.preference import PreferenceRepository
 from app.db.repositories.user import UserRepository
 from app.services.auth import get_current_user
 
@@ -29,7 +30,7 @@ async def preferences(
         )
 
         if preference is None:
-            preference = StagePreference(
+            preference = UserStagePreference(
                 stage_name=data.stage_name, color=data.color, user_id=user.id
             )
             user.stage_preferences.append(preference)
@@ -47,3 +48,15 @@ async def preferences(
         raise HTTPException(
             status_code=400, detail="Something went wrong when updating preference."
         ) from e
+
+
+@preferences_router.get("/default")
+async def default_preferences(
+    preferences_repository: PreferenceRepository = Depends(PreferenceRepository),
+) -> ResponseList[PreferenceResponse]:
+    preferences = await preferences_repository.get_default()
+    return ResponseList[PreferenceResponse](
+        data=[
+            PreferenceResponse.model_validate(preference) for preference in preferences
+        ]
+    )
