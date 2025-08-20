@@ -8,6 +8,7 @@ import 'package:geneweb/genes/gene_list.dart';
 import 'package:geneweb/genes/gene_model.dart';
 import 'package:geneweb/utilities/color_row_parser.dart';
 import 'package:geneweb/utilities/message.dart';
+import 'package:geneweb/utilities/stages.dart';
 import 'package:provider/provider.dart';
 import 'package:truncate/truncate.dart';
 
@@ -121,19 +122,33 @@ class _StagePanelState extends State<StagePanel> {
                 style: textTheme.bodySmall),
             const SizedBox(height: 16),
             Consumer<GeneModel>(builder: (context, model, child) {
-              final allStagesKeys = model.sourceGenes?.stageKeys ?? [];
               final sourceGenes = model.sourceGenes;
+              final stageGroups = _groupStages(model.sourceGenes?.stageKeys ?? []);
 
-              return Wrap(
+              return Column(
                 spacing: 8,
-                runSpacing: 8,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  for (final key in allStagesKeys)
-                    _StageCard(
-                      name: key,
-                      color: sourceGenes?.colors[key],
-                      isSelected: _selectedStages.contains(key) == true,
-                      onToggle: (value) => _handleToggle(key, value),
+                  for (final key in stageGroups.keys)
+                    Column(
+                      spacing: 4,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // don't show 'Other' label when it's the only group
+                        if (stageGroups.length != 1 || key != 'Other')
+                          Text(key, style: textTheme.titleSmall),
+                        Wrap(
+                          children: [
+                            for (final stage in stageGroups[key]!)
+                              _StageCard(
+                                name: stage,
+                                color: sourceGenes?.colors[stage] ?? randomStageColor(stage),
+                                isSelected: _selectedStages.contains(stage) == true,
+                                onToggle: (value) => _handleToggle(stage, value),
+                              ),
+                          ],
+                        )
+                      ],
                     ),
                 ],
               );
@@ -248,6 +263,27 @@ class _StagePanelState extends State<StagePanel> {
     });
     _handleChanged();
   }
+
+  Map<String, List<String>> _groupStages(List<String> stages) {
+    final stageGroups = <String, List<String>>{};
+    final allGroups = groupBy(stages, (String key) => key.split('_').first);
+    
+    for (final entry in allGroups.entries) {
+      final groupKey = entry.key;
+      final groupStages = entry.value;
+
+      // this should not happen
+      if (groupStages.isEmpty) continue;
+
+      if (groupStages.length == 1) {
+        stageGroups.putIfAbsent('Other', () => []).add(groupStages.first);
+      } else {
+        stageGroups[groupKey] = entry.value;
+      }
+    }
+    
+    return stageGroups;
+  }
 }
 
 class _StageCard extends StatelessWidget {
@@ -290,18 +326,11 @@ class _StageCard extends StatelessWidget {
                         onChanged: (value) => onToggle(value!)),
                     if (GeneModel.of(context).isSignedIn && showPicker)
                       InkWell(
-                        onTap: () => _showColorPickerDialog(context, name),
-                        child: Container(
-                          width: 24,
-                          height: 24,
-                          margin: const EdgeInsets.only(right: 10),
-                          decoration: BoxDecoration(
-                            color: backgroundColor,
-                            border: Border.all(color: Colors.white),
-                            borderRadius: BorderRadius.circular(7),
+                          onTap: () => _showColorPickerDialog(context, name),
+                          child: const Padding(
+                              padding: EdgeInsetsGeometry.only(right: 4),
+                              child: Icon(Icons.colorize_rounded))
                           ),
-                        ),
-                      ),
                   ],
                 )
               ],

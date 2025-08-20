@@ -8,6 +8,8 @@ import 'package:geneweb/utilities/color_row_parser.dart';
 import 'package:geneweb/utilities/series.dart';
 import 'dart:math';
 
+import 'package:geneweb/utilities/stages.dart';
+
 /// Holds a list of genes
 class GeneList extends Equatable {
   /// Name of the organism. This is used for auto detecting colors and stage order
@@ -268,7 +270,7 @@ class GeneList extends Equatable {
       }
       for (final stage in stageKeys) {
         if (!result.containsKey(stage)) {
-          result[stage] = _randomColor(stage);
+          result[stage] = randomStageColor(stage);
         }
       }
       return result;
@@ -285,28 +287,5 @@ class GeneList extends Equatable {
       return result;
     }
     return {};
-  }
-
-  /// Generates a stable, bland color based on the stage name
-  ///
-  /// The color is deterministic for a given stage name and will always
-  /// return the same color for the same input
-  Color _randomColor(String stage) {
-    // Use the string hash as a seed for stability
-    final seed = stage.hashCode;
-
-    // Create a seeded random generator
-    final random = Random(seed);
-
-    // Generate HSL values for a pleasant, bland color
-    // Hue: 0-360 (full color wheel)
-    // Saturation: 35-55% (not too vibrant, not too gray)
-    // Lightness: 55-75% (medium-light, visible but not too bright)
-    final hue = random.nextDouble() * 360;
-    final saturation = 0.35 + (random.nextDouble() * 0.2); // 35-55%
-    final lightness = 0.55 + (random.nextDouble() * 0.2); // 55-75%
-
-    // Convert HSL to RGB
-    return HSLColor.fromAHSL(1.0, hue, saturation, lightness).toColor();
   }
 }

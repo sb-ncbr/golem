@@ -212,7 +212,7 @@ class _MotifPanelState extends State<MotifPanel> {
 
   void _handleAddMotif() {
     if (_formKey.currentState!.validate()) {
-      final definitions = _customMotifDefinition!.toUpperCase().split('\n');
+      final definitions = _getDefinitions(_customMotifDefinition!);
       final name = (_customMotifName ?? '') != '' ? _customMotifName : definitions.first;
       final motif = Motif(name: name!, definitions: definitions, isCustom: true);
       _model.setMotifs([motif, ..._model.motifs]);
