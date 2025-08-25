@@ -49,7 +49,7 @@ class UserStagePreferenceAdminView(AdminViewBase):
         user_id = data["user"]
 
         # for some reason pk is a string of the form "stage_name,user_id" ...
-        (pk_name, pk_user_id) = pk.split(",")
+        pk_name, pk_user_id = pk.split(",")
         stage_preference = await session.get(UserStagePreference, (pk_name, pk_user_id))
 
         stage_preference.stage_name = stage_name

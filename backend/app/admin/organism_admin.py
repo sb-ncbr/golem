@@ -124,16 +124,6 @@ class OrganismAdminView(AdminViewBase):
 
     @staticmethod
     async def _store_file(file: UploadFile) -> str:
-        """
-        Store a file in the data directory.
-
-        Args:
-            file (UploadFile): The file to store.
-
-        Returns:
-            str: The path to the newly stored file.
-        """
-
         data_dir = app_config.data_dir
         file_path = f"{data_dir}/{file.filename}.xz"
         chunk_size = 1024 * 1024  # 1 MB

@@ -1,0 +1,73 @@
+services:
+  nginx:
+    container_name: golem-nginx
+    image: nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt
+      - /home/ubuntu/geneweb/deployment/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - /home/ubuntu/geneweb/deployment/nginx/snippets:/etc/nginx/snippets
+    networks:
+      - golem-network
+    restart: unless-stopped
+
+  db:
+    container_name: golem-db
+    image: postgres:17-alpine
+    volumes:
+      - golem-db-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - golem-network
+    restart: unless-stopped
+
+  api:
+    container_name: golem-api
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      GOLEM_DATABASE_URL: "postgresql+asyncpg://postgres:postgres@db:5432/postgres"
+      GOLEM_DATA_DIR: "/data"
+      GOLEM_ACCESS_TOKEN_EXPIRE_MINUTES: 30
+    volumes:
+      - /home/ubuntu/:/data
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - golem-network
+    restart: unless-stopped
+
+  ui:
+    container_name: golem-ui
+    build:
+      context: ../ui
+      dockerfile: Dockerfile
+      args:
+        GOLEM_API_URL: https://golem-dev.biodata.ceitec.cz/api/v1
+    ports:
+      - "3000:3000"
+    networks:
+      - golem-network
+    restart: unless-stopped
+
+networks:
+  golem-network:
+
+volumes:
+  golem-db-data:

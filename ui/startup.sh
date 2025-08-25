@@ -1,6 +1,6 @@
 #!/bin/bash
 
-UI_PORT=5000
+UI_PORT=3000
 
 if [[ -z "${UI_PORT}" ]]; then
     echo "UI_PORT environment variable is not set."
