@@ -9,6 +9,7 @@ environment:
 dependencies:
   collection: ^1.16.0
   csv: ^5.0.1
+  es_compression: ^2.0.14
   string_splitter: ^1.0.0+1
 
 dev_dependencies:

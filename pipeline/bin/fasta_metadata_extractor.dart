@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:es_compression/zstd.dart';
+
 const String outputDirName = "output";
 const String headerSymbol = ">";
 const String commentSymbol = ";";
@@ -131,9 +133,37 @@ Future<Metadata> parse(File inPath, Directory outPath) async {
   return seqMetadata;
 }
 
+Future<File> compressFileZstd(File inPath) async {
+  final compressedFile = File('${inPath.path}.zstd');
+  await compressedFile.create();
+
+  final sink = compressedFile.openWrite();
+  final compressor = ZstdEncoder(level: ZstdOption.defaultLevel);
+
+  await for (final chunk in inPath.openRead()) {
+    final compressedChunk = compressor.convert(chunk);
+    sink.add(compressedChunk);
+  }
+
+  await sink.close();
+  return compressedFile;
+}
+
+Future<void> compressFileGzip(File inPath,
+    {int level = ZLibOption.defaultLevel}) async {
+  final outPath = File('${inPath.path}.gz');
+
+  final inStream = inPath.openRead();
+  final outSink = outPath.openWrite();
+  final gzipCodec = GZipCodec(level: level);
+
+  await inStream.transform(gzipCodec.encoder).pipe(outSink);
+}
+
 Future<void> main(List<String> arguments) async {
   String? inPath;
   String outPath = '.';
+  bool compress = false;
 
   for (int i = 0; i < arguments.length; i++) {
     switch (arguments[i]) {
@@ -149,6 +179,10 @@ Future<void> main(List<String> arguments) async {
           outPath = arguments[++i];
         }
         break;
+      case '-c':
+      case '--compress':
+        compress = true;
+        break;
       case '-h':
       case '--help':
         print('''
@@ -159,11 +193,12 @@ It creates two output files: a JSON file that stores the extracted metadata,
 and a new FASTA file that contains only the sequences, stripped of the original metadata.
 
 Usage:
-  dart fasta_metadata_extractor.dart -i <input_file> [-o <output_directory>]
+  dart fasta_metadata_extractor.dart -i <input_file> [-o <output_directory>] [-c]
 
 Options:
   -i, --in-path     Input FASTA file path (required)
   -o, --out-path    Output directory path (default: current directory)
+  -c, --compress    Whether to also compress FASTA and metadata files using gzip (default: false).
   -h, --help        Show this help message
         ''');
         return;
@@ -181,15 +216,24 @@ Options:
   final outputDir = Directory(outPath);
 
   try {
+    print('Extracting ...');
     final Metadata metadata = await parse(inputFile, outputDir);
     final metadataFile = File(
         '${outputDir.path}/$outputDirName/${inputFile.uri.pathSegments.last}.metadata.json');
 
+    final metadataString = const JsonEncoder.withIndent('\t')
+        .convert(metadata.map((key, value) => MapEntry(key, value.toJson())));
     await metadataFile.create(recursive: true);
-    await metadataFile.writeAsString(const JsonEncoder.withIndent('\t')
-        .convert(metadata.map((key, value) => MapEntry(key, value.toJson()))));
+    await metadataFile.writeAsString(metadataString);
 
-    print('Processing completed successfully!');
+    if (compress) {
+      print('Compressing ...');
+
+      await compressFileGzip(metadataFile);
+      await compressFileGzip(File(
+          '${outputDir.path}/$outputDirName/${inputFile.uri.pathSegments.last}'));
+    }
+
     print('Output files created in: ${outputDir.path}/$outputDirName/');
   } catch (e) {
     print('Error: $e');
