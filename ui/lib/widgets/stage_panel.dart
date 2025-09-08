@@ -6,7 +6,7 @@ import 'package:geneweb/api/auth.dart';
 import 'package:geneweb/genes/stage_selection.dart';
 import 'package:geneweb/genes/gene_list.dart';
 import 'package:geneweb/genes/gene_model.dart';
-import 'package:geneweb/utilities/color_row_parser.dart';
+import 'package:geneweb/utilities/color.dart';
 import 'package:geneweb/utilities/message.dart';
 import 'package:geneweb/utilities/stages.dart';
 import 'package:provider/provider.dart';
@@ -54,9 +54,10 @@ class _StagePanelState extends State<StagePanel> {
   late List<String> _selectedStages;
   late FilterStrategy? _strategy;
   late FilterSelection? _selection;
-  late double? _percentile;
+  late List<double>? _percentiles;
   late int? _count;
 
+  
   final _percentileController = TextEditingController();
   final _countController = TextEditingController();
 
@@ -86,9 +87,9 @@ class _StagePanelState extends State<StagePanel> {
     _selectedStages = filter.selectedStages;
     _strategy = filter.strategy;
     _selection = filter.selection;
-    _percentile = filter.percentile;
+    _percentiles = filter.percentiles;
     _count = filter.count;
-    _percentileController.text = '${((_percentile ?? 0) * 100).round()}';
+    _percentileController.text = '${((_percentiles!.firstOrNull ?? 0) * 100).round()}';
     _countController.text = '$_count';
     setState(() {});
   }
@@ -174,23 +175,30 @@ class _StagePanelState extends State<StagePanel> {
                   ),
                   if (_selection == FilterSelection.percentile)
                     SizedBox(
-                      width: 200,
-                      child: TextFormField(
-                        controller: _percentileController,
-                        decoration: const InputDecoration(labelText: 'Percentile', suffix: Text('th')),
-                        keyboardType: TextInputType.number,
-                        onChanged: (value) {
-                          setState(() =>
-                              _percentile = ((double.tryParse(_percentileController.text) ?? 0) / 100).clamp(0, 1));
-                          _handleChanged();
-                        },
-                        validator: (value) {
-                          final parsed = double.tryParse(_percentileController.text);
-                          if (parsed == null || parsed < 0 || parsed > 100) return 'Enter a number between 0 and 100';
-                          return null;
-                        },
-                      ),
+                    width: 400,
+                    child: TextFormField(
+                      controller: _percentileController,
+                      decoration: const InputDecoration(
+                          labelText: 'Percentiles', suffix: Text('th')),
+                      keyboardType: TextInputType.number,
+                      onChanged: (value) {
+                        setState(() {
+                          _percentiles =
+                              _parsePercentiles(_percentileController.text);
+                        });
+                        _handleChanged();
+                      },
+                      validator: (value) {
+                        final percentiles =
+                            _parsePercentiles(_percentileController.text);
+                        if (percentiles
+                            .any((parsed) => parsed < 0 || parsed > 100) || percentiles.isEmpty) {
+                          return 'Enter one or more numbers between 0 and 100 separated by commas.';
+                        }
+                        return null;
+                      },
                     ),
+                  ),
                   if (_selection == FilterSelection.fixed)
                     SizedBox(
                       width: 200,
@@ -228,7 +236,7 @@ class _StagePanelState extends State<StagePanel> {
               if (_selection == FilterSelection.percentile) ...[
                 const SizedBox(height: 16),
                 Text(
-                    'Genes included in the analysis from each stage are genes whose transcripts will represent ${((_percentile ?? 0) * 100).toStringAsFixed(2)}% of all transcripts transcribed from the total number of protein-coding genes in each selected stage.',
+                    'Genes included in the analysis from each stage are genes whose transcripts will represent ${_formatPercentiles(_percentiles ?? [])} of all transcripts transcribed from the total number of protein-coding genes in each selected stage.',
                     style: textTheme.labelMedium),
               ],
             ],
@@ -238,6 +246,10 @@ class _StagePanelState extends State<StagePanel> {
     );
   }
 
+  String _formatPercentiles(List<double> percentiles) {
+    return percentiles.map((p) =>  '${((p) * 100).toStringAsFixed(2)}%').join(', ');
+  }
+
   void _handleChanged() {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
@@ -245,7 +257,7 @@ class _StagePanelState extends State<StagePanel> {
         selectedStages: _selectedStages,
         strategy: _strategy,
         selection: _selection,
-        percentile: _percentile,
+        percentiles: _percentiles,
         count: _count,
       ));
     } else {
@@ -283,6 +295,18 @@ class _StagePanelState extends State<StagePanel> {
     }
     
     return stageGroups;
+  }
+
+  List<double> _parsePercentiles(String rawText) {
+    return rawText
+        .trim()
+        .replaceAll(RegExp(r'\s'), '')
+        .split(',')
+        .where((p) => p.isNotEmpty)
+        .map((p) => ((double.tryParse(p) ?? 0) / 100).clamp(0, 1))
+        .toList()
+        .cast<double>()
+        .sorted((a, b) => b.compareTo(a));
   }
 }
 

@@ -27,3 +27,10 @@ extension HexColor on Color {
       '${(255 * g).toInt().toRadixString(16).padLeft(2, '0')}'
       '${(255 * b).toInt().toRadixString(16).padLeft(2, '0')}';
 }
+
+extension ColorMixing on Color {
+  /// Adds the specified amount of white (between 0 and 1) to the provided color. 
+  static Color tint(Color color, double lightnessLevel) {
+    return Color.lerp(color, Colors.white, lightnessLevel.clamp(0, 1)) ?? color;
+  }
+}

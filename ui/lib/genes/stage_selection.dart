@@ -9,8 +9,8 @@ class StageSelection {
   /// Selection method to use for filtering
   final FilterSelection? selection;
 
-  /// Percentile to use for filtering
-  final double? percentile;
+  /// Percentiles to use for filtering
+  final List<double>? percentiles;
 
   /// Count to use for filtering
   final int? count;
@@ -19,14 +19,14 @@ class StageSelection {
     this.selectedStages = const [],
     this.strategy = FilterStrategy.top,
     this.selection = FilterSelection.percentile,
-    this.percentile = 0.9,
+    this.percentiles = const [0.9],
     this.count = 3200,
   });
 
   @override
   String toString() {
     if (strategy == null || selection == null) return '${selectedStages.length} stages';
-    return '${selectedStages.length} stages: ${strategy!.name} ${selection == FilterSelection.fixed ? count : '${(percentile! * 100).round()}th'}';
+    return '${selectedStages.length} stages: ${strategy!.name} ${selection == FilterSelection.fixed ? count : '${percentiles!.map((p) => "${(p * 100).round()}th")}'}';
   }
 }
 

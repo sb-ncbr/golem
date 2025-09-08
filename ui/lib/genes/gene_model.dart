@@ -12,7 +12,8 @@ import 'package:geneweb/genes/gene_list.dart';
 import 'package:geneweb/genes/stages_data.dart';
 import 'package:geneweb/genes/tpm_data.dart';
 import 'package:geneweb/my_app.dart';
-import 'package:geneweb/utilities/color_row_parser.dart';
+import 'package:geneweb/utilities/color.dart';
+import 'package:geneweb/utilities/list.dart';
 import 'package:provider/provider.dart';
 import 'package:universal_file/universal_file.dart';
 
@@ -76,7 +77,10 @@ class GeneModel extends ChangeNotifier {
   List<Motif> get motifs => _motifs;
 
   /// Number of series the analysis will produce
-  int get expectedSeriesCount => motifs.length * (stageSelection?.selectedStages.length ?? 0);
+  int get expectedSeriesCount =>
+      motifs.length *
+      (stageSelection?.selectedStages.length ?? 0) *
+      (stageSelection?.percentiles?.length ?? 0);
 
   GeneModel(this.deploymentFlavor);
 
@@ -175,7 +179,6 @@ class GeneModel extends ChangeNotifier {
       selectedStages: [kAllStages, ...selectedStages],
       strategy: sourceGenes?.stages != null ? null : FilterStrategy.top,
       selection: sourceGenes?.stages != null ? null : FilterSelection.percentile,
-      percentile: sourceGenes?.stages != null ? null : 0.9,
       count: sourceGenes?.stages != null ? null : 3200,
     );
   }
@@ -197,7 +200,13 @@ class GeneModel extends ChangeNotifier {
     
     final defaultPreferences = await StagePreference.getDefaults();
     final userPreferences = user?.preferences ?? [];
-    final preferences = [...defaultPreferences, ...userPreferences];
+    final randomPreferences = organism!.stages.map((stage) =>
+        StagePreference(stageName: stage.stage, color: stage.color.toHex()));
+    final preferences = [
+      ...userPreferences, // user preferences have the highest priority
+      ...defaultPreferences, // then preferences of the organism
+      ...randomPreferences, // if no preferences were found, use random
+    ].distinctBy((pref) => pref.stageName);
     final colors = {
       for (StagePreference preference in preferences)
         preference.stageName: HexColor.fromHex(preference.color)
@@ -296,8 +305,10 @@ class GeneModel extends ChangeNotifier {
   Future<bool> analyze() async {
     assert(stageSelection != null);
     assert(stageSelection!.selectedStages.isNotEmpty);
+    assert(stageSelection!.percentiles != null);
+    assert(stageSelection!.percentiles!.isNotEmpty);
     assert(motifs.isNotEmpty);
-    final totalIterations = stageSelection!.selectedStages.length * motifs.length;
+    final totalIterations = stageSelection!.selectedStages.length * motifs.length * stageSelection!.percentiles!.length;
     assert(totalIterations > 0);
     int iterations = 0;
     analysisProgress = 0.0;
@@ -311,29 +322,44 @@ class GeneModel extends ChangeNotifier {
           notifyListeners();
           return false;
         }
-        final filteredGenes =
-            key == kAllStages ? sourceGenes : sourceGenes!.filter(stage: key, stageSelection: stageSelection!);
-        final name = '${key == kAllStages ? 'all' : key} - ${motif.name}';
-        final color =
-            sourceGenes?.colors.isNotEmpty == true ? (sourceGenes!.colors[key] ?? Colors.grey) : _randomColorOf(name);
-        final stroke = key == kAllStages ? 4 : sourceGenes?.stroke[key];
-        removeAnalysis(name);
 
-        final analysis = await compute(runAnalysis, {
-          'genes': filteredGenes,
-          'motif': motif,
-          'name': name,
-          'min': analysisOptions.min,
-          'max': analysisOptions.max,
-          'interval': analysisOptions.bucketSize,
-          'alignMarker': analysisOptions.alignMarker,
-          'color': color.value,
-          'stroke': stroke,
-        });
-        analyses.add(analysis);
-        iterations++;
-        analysisProgress = iterations / totalIterations;
-        notifyListeners();
+        final groupedGenes = switch (key) {
+          kAllStages => {
+              for (final p in stageSelection!.percentiles!) p: sourceGenes
+            },
+          _ => sourceGenes!
+              .filterByPercentile(stage: key, stageSelection: stageSelection!),
+        };
+
+        for (final (i, entry) in groupedGenes.entries.indexed) {
+          final percentile = entry.key;
+          final genes = entry.value;
+        
+          final name = '${key == kAllStages ? 'all' : key} - ${motif.name} - ${(percentile * 100).round()}th percentile';
+          final color =
+              sourceGenes?.colors.isNotEmpty == true ? (sourceGenes!.colors[key] ?? Colors.grey) : _randomColorOf(name);
+          final tintedColor = ColorMixing.tint(color, i / groupedGenes.length);
+          
+
+          final stroke = key == kAllStages ? 4 : sourceGenes?.stroke[key];
+          removeAnalysis(name);
+
+          final analysis = await compute(runAnalysis, {
+            'genes': genes,
+            'motif': motif,
+            'name': name,
+            'min': analysisOptions.min,
+            'max': analysisOptions.max,
+            'interval': analysisOptions.bucketSize,
+            'alignMarker': analysisOptions.alignMarker,
+            'color': tintedColor.value,
+            'stroke': stroke,
+          });
+          analyses.add(analysis);
+          iterations++;
+          analysisProgress = iterations / totalIterations;
+          notifyListeners();  
+        }
       }
     }
     analysisProgress = null;

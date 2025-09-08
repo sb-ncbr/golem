@@ -1,12 +1,9 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:geneweb/analysis/organism.dart';
-import 'package:geneweb/api/auth.dart';
 import 'package:geneweb/genes/stage_selection.dart';
 import 'package:geneweb/genes/gene.dart';
-import 'package:geneweb/utilities/color_row_parser.dart';
 import 'package:geneweb/utilities/series.dart';
-import 'dart:math';
 
 import 'package:geneweb/utilities/stages.dart';
 
@@ -174,29 +171,46 @@ class GeneList extends Equatable {
   }
 
   /// Filters gene for given [stage]. Either uses [stages] or applies [stageSelection], if specified
-  GeneList filter({required String stage, required StageSelection stageSelection}) {
+  Map<double, GeneList> filterByPercentile(
+      {required String stage, required StageSelection stageSelection}) {
+    final Map<double, GeneList> result = {};
     assert(stageKeys.contains(stage), 'Unknown stage $stage');
-    if (stages != null) {
-      assert(stages![stage] != null && stages![stage]!.isNotEmpty, 'No genes for stage $stage');
-      final ids = stages![stage]!;
-      return copyWith(genes: genes.where((gene) => ids.contains(gene.geneId)).toList());
+
+    for (final percentile in stageSelection.percentiles!) {
+      if (stages != null) {
+        assert(stages![stage] != null && stages![stage]!.isNotEmpty,
+            'No genes for stage $stage');
+        final ids = stages![stage]!;
+        result[percentile] = copyWith(
+            genes: genes.where((gene) => ids.contains(gene.geneId)).toList());
+        continue;
+      }
+
+      assert(stageSelection.selectedStages.contains(stage));
+      genes.sort((a, b) =>
+          a.transcriptionRates[stage]!.compareTo(b.transcriptionRates[stage]!));
+      if (stageSelection.selection == FilterSelection.percentile) {
+        if (stageSelection.strategy == FilterStrategy.top) {
+          result[percentile] =
+              copyWith(genes: _topPercentile(percentile, stage));
+          continue;
+        } else {
+          result[percentile] =
+              copyWith(genes: _bottomPercentile(percentile, stage));
+          continue;
+        }
+      } else {
+        if (stageSelection.strategy == FilterStrategy.top) {
+          result[percentile] = copyWith(genes: _top(stageSelection.count!));
+          continue;
+        } else {
+          result[percentile] = copyWith(genes: _bottom(stageSelection.count!));
+          continue;
+        }
+      }
     }
 
-    assert(stageSelection.selectedStages.contains(stage));
-    genes.sort((a, b) => a.transcriptionRates[stage]!.compareTo(b.transcriptionRates[stage]!));
-    if (stageSelection.selection == FilterSelection.percentile) {
-      if (stageSelection.strategy == FilterStrategy.top) {
-        return copyWith(genes: _topPercentile(stageSelection.percentile!, stage));
-      } else {
-        return copyWith(genes: _bottomPercentile(stageSelection.percentile!, stage));
-      }
-    } else {
-      if (stageSelection.strategy == FilterStrategy.top) {
-        return copyWith(genes: _top(stageSelection.count!));
-      } else {
-        return copyWith(genes: _bottom(stageSelection.count!));
-      }
-    }
+    return result;
   }
 
   static Map<String, Series> _transcriptionRates(List<Gene> genes) {
