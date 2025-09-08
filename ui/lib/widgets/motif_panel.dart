@@ -59,11 +59,11 @@ class _MotifPanelState extends State<MotifPanel> {
   Widget build(BuildContext context) {
     final sourceGenes = context.select<GeneModel, GeneList?>((model) => model.sourceGenes);
     if (sourceGenes == null) return const Center(child: Text('Load source data first'));
-    final publicSite = context.select<GeneModel, bool>((model) => model.publicSite);
     final motifs = context.select<GeneModel, List<Motif>>((model) => model.motifs);
+    final isSignedIn = context.select<GeneModel, bool>((model) => model.isSignedIn);
     final customMotifs = motifs.where((m) => m.isCustom).toList();
 
-    final presets = List.of(MotifPresets.presets).where((e) => e.isPublic || !publicSite).toList();
+    final presets = List.of(MotifPresets.presets).where((e) => e.isPublic || isSignedIn).toList();
 
     return Align(
       alignment: Alignment.topLeft,
