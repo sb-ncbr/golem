@@ -75,7 +75,7 @@ class _AnalysisOptionsPanelState extends State<AnalysisOptionsPanel> {
   Widget build(BuildContext context) {
     final publicSite = context.select<GeneModel, bool>((model) => model.publicSite);
     final markers =
-        context.select<GeneModel, List<String>>((model) => model.sourceGenes?.genes.first.markers.keys.toList() ?? []);
+        context.select<GeneModel, List<String>>((model) => model.metadata?.values.firstOrNull?.markers.keys.toList() ?? []);
     markers.sort();
     return Align(
       alignment: Alignment.topLeft,
@@ -100,7 +100,7 @@ class _AnalysisOptionsPanelState extends State<AnalysisOptionsPanel> {
                       setState(() => _alignMarker = value);
                       _handleChanged();
                     },
-                    value: _alignMarker,
+                    initialValue: _alignMarker,
                     decoration: const InputDecoration(
                         labelText: 'Motif mapping', helperText: 'Motifs are mapped relative to TSS or ATG'),
                   ),

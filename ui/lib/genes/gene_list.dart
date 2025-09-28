@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:geneweb/analysis/organism.dart';
+import 'package:geneweb/api/organism.dart';
 import 'package:geneweb/genes/stage_selection.dart';
 import 'package:geneweb/genes/gene.dart';
 import 'package:geneweb/utilities/series.dart';
@@ -48,10 +49,10 @@ class GeneList extends Equatable {
         transcriptionRates = _transcriptionRates(genes),
         _colors = colors;
 
-  /// Parse fasta file into list of genes.
+  /// Parse fasta file (with metadata stored in comments) into list of genes.
   ///
   /// Feed the result to [GeneList.fromList]
-  static Future<(List<Gene>, List<dynamic>)> parseFasta(String data, Function(double progress) progressCallback) async {
+  static Future<(List<Gene>, List<dynamic>)> parseFastaWithComments(String data, Function(double progress) progressCallback) async {
     final chunks = data.split('>');
     final genes = <Gene>[];
     final errors = <dynamic>[];
@@ -67,13 +68,46 @@ class GeneList extends Equatable {
       }
       final lines = '>$chunk'.split('\n');
       try {
-        final gene = Gene.fromFasta(lines);
+        final gene = Gene.fromFastaWithComments(lines);
         genes.add(gene);
       } catch (error) {
         errors.add(error);
       }
     }
     debugPrint('.fasta parsing completed with ${genes.length} genes and ${errors.length} errors');
+    return (genes, errors);
+  }
+
+  /// Parse fasta file into list of genes.
+  ///
+  /// Feed the result to [GeneList.fromList]
+  static Future<(List<Gene>, List<dynamic>)> parseFasta(
+      String data,
+      OrganismMetadata metadata,
+      Function(double progress) progressCallback) async {
+    final chunks = data.split('>');
+    final genes = <Gene>[];
+    final errors = <dynamic>[];
+    int cnt = 0;
+    for (final chunk in chunks) {
+      // Insert a delay so that we do not block the UI thread for too long
+      if (cnt++ % 1000 == 0) {
+        progressCallback(cnt / chunks.length);
+        await Future.delayed(const Duration(milliseconds: 20));
+      }
+      if (chunk.isEmpty) {
+        continue;
+      }
+      final lines = '>$chunk'.split('\n');
+      try {
+        final gene = Gene.fromFasta(lines, metadata);
+        genes.add(gene);
+      } catch (error) {
+        errors.add(error);
+      }
+    }
+    debugPrint(
+        '.fasta parsing completed with ${genes.length} genes and ${errors.length} errors');
     return (genes, errors);
   }
 
@@ -107,7 +141,7 @@ class GeneList extends Equatable {
 
   /// Create a new GeneList from list of genes.
   ///
-  /// Obtain the list by calling [parseFasta]
+  /// Obtain the list by calling [parseFastaWithComments] or [parseFasta]
   factory GeneList.fromList({required List<Gene> genes, required List<dynamic> errors, Organism? organism, Map<String, Color>? colors}) {
     GeneList result;
     result = GeneList._(

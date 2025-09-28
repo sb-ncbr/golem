@@ -1,7 +1,6 @@
 import uuid
 
 from fastapi import Depends
-from sqlalchemy.sql.operators import exists
 from sqlmodel import select, or_
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -36,7 +35,7 @@ class OrganismRepository:
             filters (OrganismFilters | None): Filters to apply.
 
         Returns:
-            list[Organism] | None: The list of organisms matching the filters.
+            list[Organism]: The list of organisms matching the filters.
 
         """
 

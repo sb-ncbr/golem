@@ -6,6 +6,7 @@ import 'package:geneweb/genes/stage_selection.dart';
 import 'package:geneweb/genes/gene_model.dart';
 import 'package:geneweb/screens/analysis_screen.dart';
 import 'package:geneweb/widgets/analysis_options_panel.dart';
+import 'package:geneweb/widgets/loading.dart';
 import 'package:geneweb/widgets/motif_panel.dart';
 import 'package:geneweb/widgets/stage_panel.dart';
 import 'package:geneweb/widgets/source_panel.dart';
@@ -50,6 +51,7 @@ class _HomeState extends State<Home> {
     return SingleChildScrollView(
       child: Column(
         children: [
+          const Loading(),
           Stepper(
             currentStep: _index,
             onStepCancel: _index > 0 ? _handleStepCancel : null,
@@ -114,13 +116,13 @@ class _HomeState extends State<Home> {
       case 0: // source data
         return true;
       case 1: // analysis options
-        return model.sourceGenes != null;
+        return model.metadata != null || model.sourceGenes != null;
       case 2: // motif
-        return model.sourceGenes != null;
+        return model.metadata != null || model.sourceGenes != null;
       case 3: // stage
-        return model.sourceGenes != null;
+        return model.metadata != null || model.sourceGenes != null;
       case 4: // analysis
-        return model.sourceGenes != null && model.expectedSeriesCount > 0 && model.expectedSeriesCount <= 60;
+        return (model.sourceGenes != null) && model.expectedSeriesCount > 0 && model.expectedSeriesCount <= 60;
       default:
         return false;
     }

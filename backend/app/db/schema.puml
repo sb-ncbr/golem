@@ -28,6 +28,7 @@ entity users_groups {
 entity user_stages_preferences {
     *stage_name: varchar
     *user_id: <<FK users>>
+    ---
     *color: varchar
 }
 
@@ -35,7 +36,10 @@ entity organisms {
     *id: uuid
     ---
     *name: varchar
-    *filename: varchar
+    description: varchar
+    *sequences_filename: varchar
+    *metadata_filename: varchar
+    *take_first_transcript_only: bool
     *public: bool
 }
 
@@ -49,6 +53,19 @@ entity default_stages_preferences {
     *color: varchar
 }
 
+entity motifs {
+    *id: uuid
+    ---
+    *name: varchar
+    *is_public: bool
+    user_id: <<FK users>>
+}
+
+entity motif_definitions {
+    *definition: varchar
+    *motif_id: <<FK motifs>>
+}
+
 entity alembic_version {
     *version_num: varchar
 }
@@ -60,5 +77,7 @@ users ||..o{ user_stages_preferences
 
 groups ||..o{ organisms_groups
 organisms ||..o{ organisms_groups
+
+motifs ||.l.|{ motif_definitions
 
 @enduml

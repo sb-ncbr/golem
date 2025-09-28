@@ -3,7 +3,7 @@ import uuid
 from pydantic_extra_types.color import Color
 from sqlmodel import SQLModel, Field, Relationship, Column
 
-from app.db.types.color import ColorType
+from app.db.custom_types.color import ColorType
 
 DEFAULT_COLOR_RGBA = (158, 158, 158, 1.0)
 

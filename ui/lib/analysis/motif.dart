@@ -2,7 +2,7 @@
 ///
 /// Codes via https://www.genome.jp/kegg/catalog/codes1.html
 class Motif {
-  String get id => definitions.join(',');
+  late final String id;
   final bool isCustom;
   final String name;
   final List<String> definitions;
@@ -46,7 +46,27 @@ class Motif {
     'V': 'B',
   };
 
-  Motif({required this.name, required this.definitions, this.isCustom = false, this.isPublic = true});
+  Motif({String? id, required this.name, required this.definitions, this.isCustom = false, this.isPublic = true}) {
+    this.id = id ?? definitions.join(',');
+  }
+  
+  factory Motif.fromJson(Map<String, dynamic> json) {
+    return switch (json) {
+      {
+        'id': String id,
+        'name': String name,
+        'public': bool public,
+        'definitions': List<dynamic> definitions,
+      } =>
+        Motif(
+            id: id,
+            name: name,
+            definitions:
+                definitions.map((definition) => definition.toString()).toList(),
+            isPublic: public),
+      _ => throw const FormatException('Failed to load motif.')
+    };
+  }
 
   static String? validate(List<String> definitions) {
     if (definitions.isEmpty) {

@@ -12,5 +12,6 @@ class OrganismResponse(BaseSchema):
     description: str | None
     sequences_filename: str
     metadata_filename: str
+    take_first_transcript_only: bool
     public: bool
     groups: list[GroupResponse]

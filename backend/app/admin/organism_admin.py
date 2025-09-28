@@ -1,4 +1,4 @@
-import aiofiles, asyncio, lzma, uuid
+import aiofiles, asyncio, uuid
 
 from sqlmodel.ext.asyncio.session import AsyncSession
 from starlette_admin import FileField
@@ -20,12 +20,19 @@ class OrganismAdminView(AdminViewBase):
     fields = [
         "name",
         "description",
-        FileField("sequences_file", label="FASTA File", required=True, accept=".fasta"),
         FileField(
-            "metadata_file", label="Metadata File", required=True, accept=".json"
+            "sequences_file", label="FASTA File", required=True, accept=".fasta.gz"
         ),
-        FileField("sequences_file_edit", label="FASTA File", accept=".fasta"),
-        FileField("metadata_file_edit", label="Metadata File", accept=".json"),
+        FileField(
+            "metadata_file", label="Metadata File", required=True, accept=".json.gz"
+        ),
+        FileField(
+            "sequences_file_edit", label="Compressed FASTA File", accept=".fasta.gz"
+        ),
+        FileField(
+            "metadata_file_edit", label="Compressed Metadata File", accept=".json.gz"
+        ),
+        "take_first_transcript_only",
         "public",
         "groups",
     ]
@@ -46,6 +53,7 @@ class OrganismAdminView(AdminViewBase):
         name = data["name"]
         description = data["description"]
         public = data["public"]
+        take_first_transcript_only = data["take_first_transcript_only"]
         group_ids = data["groups"]
         sequences_file = data["sequences_file"][0]
         metadata_file = data["metadata_file"][0]
@@ -69,6 +77,7 @@ class OrganismAdminView(AdminViewBase):
             name=name,
             description=description,
             public=public,
+            take_first_transcript_only=take_first_transcript_only,
             groups=groups,
             sequences_filename=sequence_filename,
             metadata_filename=metadata_filename,
@@ -125,20 +134,14 @@ class OrganismAdminView(AdminViewBase):
     @staticmethod
     async def _store_file(file: UploadFile) -> str:
         data_dir = app_config.data_dir
-        file_path = f"{data_dir}/{file.filename}.xz"
+        file_path = f"{data_dir}/{file.filename}"
         chunk_size = 1024 * 1024  # 1 MB
-
-        compressor = lzma.LZMACompressor(format=lzma.FORMAT_XZ)
 
         async with aiofiles.open(file_path, "wb") as out_file:
             while content := await file.read(chunk_size):
-                compressed_chunk = await asyncio.to_thread(compressor.compress, content)
-                await out_file.write(compressed_chunk)
+                await out_file.write(content)
 
-            flushed_chunk = await asyncio.to_thread(compressor.flush)
-            await out_file.write(flushed_chunk)
-
-        return f"{file.filename}.xz"
+        return file.filename.replace('.gz', '')
 
     @staticmethod
     def _validate_name(name: str, errors: dict[str, str]):

@@ -46,7 +46,13 @@ async def download_organism(
     filters = OrganismFilters(user_id=user.id if user is not None else None)
     organisms = await organism_repository.get(filters)
     organism = next(
-        (organism for organism in organisms if organism.sequences_filename == filename), None
+        (
+            organism
+            for organism in organisms
+            if organism.sequences_filename == filename
+            or organism.metadata_filename == filename
+        ),
+        None,
     )
     not_found_exception = HTTPException(status_code=404, detail="Organism not found")
 
@@ -64,7 +70,8 @@ async def download_organism(
     if not organism.public and not has_group_access:
         raise not_found_exception
 
-    path = pathlib.Path(app_config.data_dir) / filename
+    # TODO: move .gz somewhere else
+    path = pathlib.Path(app_config.data_dir) / f"{filename}.gz"
 
     if not path.exists():
         raise not_found_exception

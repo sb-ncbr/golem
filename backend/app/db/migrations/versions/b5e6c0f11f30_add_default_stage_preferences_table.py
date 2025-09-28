@@ -11,7 +11,7 @@ from alembic import op
 import sqlalchemy as sa
 import sqlmodel
 
-from app.db.types.color import ColorType
+from app.db.custom_types.color import ColorType
 
 # revision identifiers, used by Alembic.
 revision: str = 'b5e6c0f11f30'

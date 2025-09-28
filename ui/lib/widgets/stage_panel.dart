@@ -3,6 +3,7 @@ import 'package:faabul_color_picker/faabul_color_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:geneweb/api/auth.dart';
+import 'package:geneweb/api/organism.dart';
 import 'package:geneweb/genes/stage_selection.dart';
 import 'package:geneweb/genes/gene_list.dart';
 import 'package:geneweb/genes/gene_model.dart';
@@ -83,7 +84,7 @@ class _StagePanelState extends State<StagePanel> {
   }
 
   void _updateStateFromModel() {
-    final filter = GeneModel.of(context).stageSelection ?? StageSelection();
+    final filter = GeneModel.of(context).stageSelection ?? StageSelection(selectedStages: []);
     _selectedStages = filter.selectedStages;
     _strategy = filter.strategy;
     _selection = filter.selection;
@@ -99,7 +100,8 @@ class _StagePanelState extends State<StagePanel> {
     final textTheme = Theme.of(context).textTheme;
     final allowFilter = context.select<GeneModel, bool>((model) => model.sourceGenes?.stages == null);
     final sourceGenes = context.select<GeneModel, GeneList?>((model) => model.sourceGenes);
-    if (sourceGenes == null) return const Center(child: Text('Load source data first'));
+    final metadata = context.select<GeneModel, OrganismMetadata?>((model) => model.metadata);
+    if (sourceGenes == null && metadata == null) return const Center(child: Text('Load source data first'));
     return Align(
       alignment: Alignment.topLeft,
       child: Form(
@@ -124,33 +126,65 @@ class _StagePanelState extends State<StagePanel> {
             const SizedBox(height: 16),
             Consumer<GeneModel>(builder: (context, model, child) {
               final sourceGenes = model.sourceGenes;
-              final stageGroups = _groupStages(model.sourceGenes?.stageKeys ?? []);
+              final stageKeys = model
+                      .metadata?.values.first.transcriptionRates.keys
+                      .toList() ??
+                  sourceGenes?.stageKeys ??
+                  [];
+              final stageGroups = _groupStages(stageKeys);
+
+              for (final stage in stageKeys) {
+                sourceGenes?.colors[stage] ??= randomStageColor(stage);
+              }
 
               return Column(
                 spacing: 8,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   for (final key in stageGroups.keys)
-                    Column(
-                      spacing: 4,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // don't show 'Other' label when it's the only group
-                        if (stageGroups.length != 1 || key != 'Other')
-                          Text(key, style: textTheme.titleSmall),
-                        Wrap(
+                    if (key != 'Other')
+                      Column(
+                        spacing: 4,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // don't show 'Other' label when it's the only group
+                          if (stageGroups.length != 1)
+                            Text(key, style: textTheme.titleSmall),
+                          Wrap(
+                            children: [
+                              for (final stage in stageGroups[key]!)
+                                _StageCard(
+                                  name: stage,
+                                  color: sourceGenes?.colors[stage],
+                                  isSelected: _selectedStages.contains(stage) == true,
+                                  onToggle: (value) => _handleToggle(stage, value),
+                                ),
+                            ],
+                          )
+                        ],
+                      ),
+                      // TODO: extract this to a widget
+                      if (stageGroups.containsKey('Other'))
+                        Column(
+                          spacing: 4,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            for (final stage in stageGroups[key]!)
-                              _StageCard(
-                                name: stage,
-                                color: sourceGenes?.colors[stage] ?? randomStageColor(stage),
-                                isSelected: _selectedStages.contains(stage) == true,
-                                onToggle: (value) => _handleToggle(stage, value),
-                              ),
+                            // don't show 'Other' label when it's the only group
+                            if (stageGroups.length != 1)
+                              Text('Other', style: textTheme.titleSmall),
+                            Wrap(
+                              children: [
+                                for (final stage in stageGroups['Other']!)
+                                  _StageCard(
+                                    name: stage,
+                                    color: sourceGenes?.colors[stage],
+                                    isSelected: _selectedStages.contains(stage) == true,
+                                    onToggle: (value) => _handleToggle(stage, value),
+                                  ),
+                              ],
+                            )
                           ],
-                        )
-                      ],
-                    ),
+                        ),
                 ],
               );
             }),
@@ -208,13 +242,13 @@ class _StagePanelState extends State<StagePanel> {
                         keyboardType: TextInputType.number,
                         onChanged: (value) {
                           setState(() =>
-                              _count = (int.tryParse(_countController.text) ?? 0).clamp(0, sourceGenes.genes.length));
+                              _count = (int.tryParse(_countController.text) ?? 0).clamp(0, sourceGenes?.genes.length ?? metadata!.length));
                           _handleChanged();
                         },
                         validator: (value) {
                           final parsed = int.tryParse(_countController.text);
-                          if (parsed == null || parsed < 0 || parsed > sourceGenes.genes.length) {
-                            return 'Enter a number between 0 and ${sourceGenes.genes.length}';
+                          if (parsed == null || parsed < 0 || parsed > (sourceGenes?.genes.length ?? metadata!.length)) {
+                            return 'Enter a number between 0 and ${sourceGenes?.genes.length ?? metadata!.length}';
                           }
                           return null;
                         },

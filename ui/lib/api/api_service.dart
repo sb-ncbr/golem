@@ -114,6 +114,15 @@ class ApiService {
     }
   }
 
+  Future<ApiResponse> delete(String path) async {
+    try {
+      final response = await dio.delete(path);
+      return ApiResponse.fromJson(response.data);
+    } catch (e) {
+      return _handleResponseError(e);
+    }
+  }
+
   ApiResponse _handleResponseError(Object e) {
     if (e is DioException) {
       if (e.response != null) {

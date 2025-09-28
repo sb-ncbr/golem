@@ -1,8 +1,13 @@
+import 'dart:collection';
+
 import 'package:flutter/material.dart';
 import 'package:geneweb/analysis/motif.dart';
-import 'package:geneweb/analysis/motif_presets.dart';
+import 'package:geneweb/api/api_service.dart';
+import 'package:geneweb/api/motif.dart';
+import 'package:geneweb/api/organism.dart';
 import 'package:geneweb/genes/gene_list.dart';
 import 'package:geneweb/genes/gene_model.dart';
+import 'package:geneweb/utilities/message.dart';
 import 'package:provider/provider.dart';
 import 'package:truncate/truncate.dart';
 
@@ -38,6 +43,8 @@ class MotifPanel extends StatefulWidget {
 class _MotifPanelState extends State<MotifPanel> {
   final _formKey = GlobalKey<FormState>();
   late final _model = GeneModel.of(context);
+  late Future<List<Motif>> _futureMotifs;
+  late List<Motif> _loadedMotifs;
 
   String? _customMotifName;
   String? _customMotifDefinition;
@@ -46,24 +53,32 @@ class _MotifPanelState extends State<MotifPanel> {
   final _definitionController = TextEditingController();
   final _reverseComplementsController = TextEditingController();
   bool _showEditor = false;
+  
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchMotifs();
+    context.read<GeneModel>().userNotifier.addListener(_fetchMotifs);
+  }
 
   @override
   void dispose() {
     _nameController.dispose();
     _definitionController.dispose();
     _reverseComplementsController.dispose();
+    context.read<GeneModel>().userNotifier.removeListener(_fetchMotifs);
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final sourceGenes = context.select<GeneModel, GeneList?>((model) => model.sourceGenes);
-    if (sourceGenes == null) return const Center(child: Text('Load source data first'));
+    final metadata = context.select<GeneModel, OrganismMetadata?>((model) => model.metadata);
+    if (sourceGenes == null && metadata == null) return const Center(child: Text('Load source data first'));
     final motifs = context.select<GeneModel, List<Motif>>((model) => model.motifs);
-    final isSignedIn = context.select<GeneModel, bool>((model) => model.isSignedIn);
     final customMotifs = motifs.where((m) => m.isCustom).toList();
-
-    final presets = List.of(MotifPresets.presets).where((e) => e.isPublic || isSignedIn).toList();
+    final textTheme = Theme.of(context).textTheme;
 
     return Align(
       alignment: Alignment.topLeft,
@@ -85,31 +100,60 @@ class _MotifPanelState extends State<MotifPanel> {
                       onToggle: (bool value) => _handlePresetToggled(m, value),
                       isSelected: true,
                     )),
-                if (!_showEditor) TextButton(onPressed: _handleOpenEditor, child: const Text('Add custom motif…'))
+                if (!_showEditor)
+                  TextButton(
+                      onPressed: _handleOpenEditor,
+                      child: const Text('Add custom motif…'))
               ],
             ),
             if (_showEditor) ...[
               _buildMotifEditor(),
               const SizedBox(height: 16),
-              Text('R = AG, Y = CT, W = AT, S = GC, M = AC, K = GT, B = CGT, D = AGT, H = ACT, V = ACG, N = ACGT',
+              Text(
+                  'R = AG, Y = CT, W = AT, S = GC, M = AC, K = GT, B = CGT, D = AGT, H = ACT, V = ACG, N = ACGT',
                   style: Theme.of(context).textTheme.labelMedium!),
               const SizedBox(height: 16),
             ],
             const SizedBox(height: 16.0),
             const Text('PRESETS'),
             const SizedBox(height: 16.0),
-            Wrap(
-              spacing: 4,
-              runSpacing: 4,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                ...presets.map((m) => _MotifCard(
-                      motif: m,
-                      onToggle: (bool value) => _handlePresetToggled(m, value),
-                      isSelected: motifs.contains(m),
-                    )),
-              ],
-            ),
+            FutureBuilder(
+                future: _futureMotifs,
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    final motifGroups = _groupMotifs(_loadedMotifs);
+                    return Column(
+                      spacing: 8.0,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        for (final group in motifGroups.entries)
+                          Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (motifGroups.length != 1)
+                                  Text(group.key, style: textTheme.titleSmall),
+                                Wrap(
+                                  spacing: 4,
+                                  runSpacing: 4,
+                                  crossAxisAlignment: WrapCrossAlignment.center,
+                                  children: [
+                                    ...group.value.map((m) => _MotifCard(
+                                          motif: m,
+                                          onToggle: (bool value) =>
+                                              _handlePresetToggled(m, value),
+                                          isSelected: motifs.contains(m),
+                                          onDelete: _fetchMotifs,
+                                        )),
+                                  ],
+                                )
+                              ])
+                      ],
+                    );
+                  } else if (snapshot.hasError) {
+                    return Text('${snapshot.error}');
+                  }
+                  return const CircularProgressIndicator();
+                }),
           ],
         ),
       ),
@@ -169,6 +213,27 @@ class _MotifPanelState extends State<MotifPanel> {
     );
   }
 
+  void _fetchMotifs() {
+    setState(() {
+      _futureMotifs = fetchMotifs();
+      _futureMotifs.then((value) => _loadedMotifs = value);
+    });
+  }
+
+  SplayTreeMap<String, List<Motif>> _groupMotifs(List<Motif> motifs) {
+    final motifGroups = SplayTreeMap<String, List<Motif>>();
+
+    for (final motif in motifs) {
+      if (motif.isPublic) {
+        motifGroups.putIfAbsent('Public', () => []).add(motif);
+      } else {
+        motifGroups.putIfAbsent('Custom', () => []).add(motif);
+      }
+    }
+
+    return motifGroups;
+  }
+
   void _updateReverseComplements() {
     final error = _validateMotifDefinition(_customMotifDefinition);
     setState(() => _customMotifError = error);
@@ -210,12 +275,18 @@ class _MotifPanelState extends State<MotifPanel> {
     _reverseComplementsController.text = '';
   }
 
-  void _handleAddMotif() {
+  Future<void> _handleAddMotif() async {
     if (_formKey.currentState!.validate()) {
       final definitions = _getDefinitions(_customMotifDefinition!);
       final name = (_customMotifName ?? '') != '' ? _customMotifName : definitions.first;
       final motif = Motif(name: name!, definitions: definitions, isCustom: true);
-      _model.setMotifs([motif, ..._model.motifs]);
+
+      if (_model.isSignedIn) {
+        final newMotif = await createMotif(motif);
+        _loadedMotifs.add(newMotif);
+      } else {
+        _model.setMotifs([motif, ..._model.motifs]);
+      }
     }
     setState(() => _showEditor = false);
   }
@@ -225,7 +296,10 @@ class _MotifCard extends StatelessWidget {
   final Motif motif;
   final Function(bool value) onToggle;
   final bool isSelected;
-  const _MotifCard({required this.motif, required this.onToggle, required this.isSelected});
+  late final Function onDelete;
+  _MotifCard({required this.motif, required this.onToggle, required this.isSelected, Function? onDelete}) {
+    this.onDelete = onDelete ?? () {};
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -244,21 +318,42 @@ class _MotifCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Checkbox(value: isSelected, onChanged: (value) => onToggle(value!)),
+                    Checkbox(
+                        value: isSelected,
+                        onChanged: (value) => onToggle(value!)),
                     Expanded(
                         child: FittedBox(
                             fit: BoxFit.scaleDown,
                             alignment: Alignment.centerLeft,
-                            child: Text(truncate(motif.name, 20), style: textTheme.titleSmall))),
+                            child: Text(truncate(motif.name, 20),
+                                style: textTheme.titleSmall))),
+                    if (!motif.isPublic)
+                      IconButton(
+                          onPressed: () => _handleDelete(context),
+                          icon: const Icon(Icons.delete_forever,
+                              color: Colors.red))
                   ],
                 ),
                 const SizedBox(height: 8),
-                FittedBox(child: Text(truncate(motif.definitions.join(', '), 25), style: textTheme.labelSmall)),
+                FittedBox(
+                    child: Text(truncate(motif.definitions.join(', '), 25),
+                        style: textTheme.labelSmall)),
               ],
             ),
           ),
         ),
       ),
     );
+  }
+
+  Future<void> _handleDelete(BuildContext context) async {
+    final model = GeneModel.of(context);
+
+    await deleteMotif(motif.id,
+        onSuccess: onDelete, onError: (error) => context.showMessage(error));
+
+    if (model.motifs.any((m) => m.id == motif.id)) {
+      model.setMotifs(model.motifs.where((m) => m.id != motif.id).toList());
+    }
   }
 }

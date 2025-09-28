@@ -85,7 +85,7 @@ class OrganismPresets {
     Organism(
       public: true,
       name: 'Chara braunii',
-      filename: 'Chara_braunii.fasta.zip',
+      filename: 'Chara_braunii.fasta',
       description: 'ATG',
       stages: [
         StageAndColor('Antheridia', Colors.indigo),
@@ -98,7 +98,7 @@ class OrganismPresets {
     Organism(
       public: true,
       name: 'Marchantia polymorpha',
-      filename: 'Marchantia_polymorpha-with-tss.fasta.zip',
+      filename: 'Marchantia_polymorpha-with-tss.fasta',
       description: 'ATG, TSS',
       stages: [
         StageAndColor('Antheridium', const Color(0xff0085B4)),
@@ -108,7 +108,7 @@ class OrganismPresets {
     ),
     Organism(
       name: 'Marchantia polymorpha',
-      filename: 'Marchantia_polymorpha.fasta.zip',
+      filename: 'Marchantia_polymorpha.fasta',
       description: 'ATG',
       stages: [
         StageAndColor('Antheridium', const Color(0xff0085B4)),
@@ -118,7 +118,7 @@ class OrganismPresets {
     ),
     Organism(
       name: 'Physcomitrium patens',
-      filename: 'Physcomitrium_patens.fasta.zip',
+      filename: 'Physcomitrium_patens.fasta',
       description: 'ATG',
       stages: [
         StageAndColor('Antheridia_9DAI', const Color(0xff21C5FF)),
@@ -134,7 +134,7 @@ class OrganismPresets {
     Organism(
       public: true,
       name: 'Physcomitrium patens',
-      filename: 'Physcomitrium_patens-with-tss.fasta.zip',
+      filename: 'Physcomitrium_patens-with-tss.fasta',
       description: 'ATG, TSS',
       stages: [
         StageAndColor('Antheridia_9DAI', const Color(0xff21C5FF)),
@@ -149,7 +149,7 @@ class OrganismPresets {
     ),
     Organism(
       name: 'Azolla filiculoides',
-      filename: 'Azolla_filiculoides.fasta.zip',
+      filename: 'Azolla_filiculoides.fasta',
       description: 'ATG',
       stages: [
         StageAndColor('Leaves', const Color(0xff92D050)),
@@ -160,7 +160,7 @@ class OrganismPresets {
     ),
     Organism(
       name: 'Azolla filiculoides',
-      filename: 'Azolla_filiculoides-with-tss.fasta.zip',
+      filename: 'Azolla_filiculoides-with-tss.fasta',
       description: 'ATG, TSS',
       stages: [
         StageAndColor('Leaves', const Color(0xff92D050)),
@@ -170,7 +170,7 @@ class OrganismPresets {
     ),
     Organism(
       name: 'Ceratopteris richardii',
-      filename: 'Ceratopteris_richardii.fasta.zip',
+      filename: 'Ceratopteris_richardii.fasta',
       description: 'ATG',
       stages: [
         StageAndColor('Gametophyte', const Color(0xff2980B9)),
@@ -181,7 +181,7 @@ class OrganismPresets {
     ),
     Organism(
       name: 'Ceratopteris richardii',
-      filename: 'Ceratopteris_richardii-with-tss.fasta.zip',
+      filename: 'Ceratopteris_richardii-with-tss.fasta',
       description: 'ATG, TSS',
       stages: [
         StageAndColor('Gametophyte', const Color(0xff2980B9)),
@@ -194,7 +194,7 @@ class OrganismPresets {
     Organism(
         public: true,
         name: 'Amborella trichopoda',
-        filename: 'Amborella_trichopoda.fasta.zip',
+        filename: 'Amborella_trichopoda.fasta',
         description: 'ATG',
         takeFirstTranscriptOnly: false,
         stages: [
@@ -209,7 +209,7 @@ class OrganismPresets {
     Organism(
       public: true,
       name: 'Oryza sativa',
-      filename: 'Oryza_sativa.fasta.zip',
+      filename: 'Oryza_sativa.fasta',
       description: 'ATG',
       stages: [
         StageAndColor('TCP', const Color(0xff21C5FF)),
@@ -220,7 +220,7 @@ class OrganismPresets {
     ),
     Organism(
       name: 'Hordeum vulgare',
-      filename: 'Hordeum_vulgare.fasta.zip',
+      filename: 'Hordeum_vulgare.fasta',
       description: 'ATG',
       stages: [
         StageAndColor('Embryo_8_DAP', const Color(0xff6E2C00)),
@@ -241,7 +241,7 @@ class OrganismPresets {
     ),
     Organism(
       name: 'Hordeum vulgare',
-      filename: 'Hordeum_vulgare-with-tss.fasta.zip',
+      filename: 'Hordeum_vulgare-with-tss.fasta',
       description: 'ATG, TSS',
       stages: [
         StageAndColor('Embryo_8_DAP', const Color(0xff6E2C00)),
@@ -263,7 +263,7 @@ class OrganismPresets {
     ),
     Organism(
       name: 'Zea mays',
-      filename: 'Zea_mays.fasta.zip',
+      filename: 'Zea_mays.fasta',
       description: 'ATG',
       stages: [
         StageAndColor('Microspore', const Color(0xffFF6D6D)),
@@ -277,7 +277,7 @@ class OrganismPresets {
     Organism(
       public: true,
       name: 'Zea mays',
-      filename: 'Zea_mays-with-tss.fasta.zip',
+      filename: 'Zea_mays-with-tss.fasta',
       description: 'ATG, TSS',
       stages: [
         StageAndColor('Microspore', const Color(0xffFF6D6D)),
@@ -290,7 +290,7 @@ class OrganismPresets {
     ),
     Organism(
       name: 'Solanum lycopersicum',
-      filename: 'Solanum_lycopersicum.fasta.zip',
+      filename: 'Solanum_lycopersicum.fasta',
       description: 'ATG',
       stages: [
         StageAndColor('Microspore', const Color(0xffFF6D6D)),
@@ -308,7 +308,7 @@ class OrganismPresets {
     Organism(
       public: true,
       name: 'Solanum lycopersicum',
-      filename: 'Solanum_lycopersicum-with-tss.fasta.zip',
+      filename: 'Solanum_lycopersicum-with-tss.fasta',
       description: 'ATG, TSS',
       stages: [
         StageAndColor('Microspore', const Color(0xffFF6D6D)),
@@ -325,56 +325,56 @@ class OrganismPresets {
     ),
     Organism(
       name: 'Arabidopsis thaliana',
-      filename: 'Arabidopsis_thaliana.fasta.zip',
+      filename: 'Arabidopsis_thaliana.fasta',
       description: 'ATG only',
       stages: _arabidopsisStages,
     ),
     Organism(
       public: true,
       name: 'Arabidopsis thaliana',
-      filename: 'Arabidopsis_thaliana-with-tss.fasta.zip',
+      filename: 'Arabidopsis_thaliana-with-tss.fasta',
       description: 'ATG, TSS',
       stages: _arabidopsisStages,
     ),
     Organism(
       name: 'Arabidopsis thaliana',
-      filename: 'Arabidopsis-variants.fasta.zip',
+      filename: 'Arabidopsis-variants.fasta',
       description: 'TSS, ATG, all splicing variants',
       stages: _arabidopsisStages,
     ),
     Organism(
       name: 'Arabidopsis thaliana',
-      filename: 'Arabidopsis_thaliana_mitochondrion.fasta.zip',
+      filename: 'Arabidopsis_thaliana_mitochondrion.fasta',
       description: 'Mitochondrion dataset',
       stages: _arabidopsisStages,
     ),
     Organism(
       name: 'Arabidopsis thaliana',
-      filename: 'Arabidopsis_thaliana_chloroplast.fasta.zip',
+      filename: 'Arabidopsis_thaliana_chloroplast.fasta',
       description: 'Chloroplast dataset',
       stages: _arabidopsisStages,
     ),
     Organism(
       name: 'Arabidopsis thaliana',
-      filename: 'Arabidopsis_thaliana_small_rna.fasta.zip',
+      filename: 'Arabidopsis_thaliana_small_rna.fasta',
       description: 'Small RNA dataset',
       stages: [],
     ),
     Organism(
       name: 'Allium cepa',
-      filename: 'Allium_cepa.fasta.zip',
+      filename: 'Allium_cepa.fasta',
       description: 'ATG',
       stages: [],
     ),
     Organism(
       name: 'Silene vulgaris',
-      filename: 'Silene_vulgaris.fasta.zip',
+      filename: 'Silene_vulgaris.fasta',
       description: 'ATG',
       stages: [],
     ),
     Organism(
       name: 'Silene vulgaris',
-      filename: 'Silene_vulgaris-with-tss.fasta.zip',
+      filename: 'Silene_vulgaris-with-tss.fasta',
       description: 'ATG, TSS',
       stages: [],
     ),

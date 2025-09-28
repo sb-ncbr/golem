@@ -6,6 +6,7 @@ import 'package:geneweb/analysis/analysis_options.dart';
 import 'package:geneweb/analysis/motif.dart';
 import 'package:geneweb/analysis/organism.dart';
 import 'package:geneweb/api/auth.dart';
+import 'package:geneweb/api/organism.dart';
 import 'package:geneweb/genes/gene.dart';
 import 'package:geneweb/genes/stage_selection.dart';
 import 'package:geneweb/genes/gene_list.dart';
@@ -17,9 +18,38 @@ import 'package:geneweb/utilities/list.dart';
 import 'package:provider/provider.dart';
 import 'package:universal_file/universal_file.dart';
 
+class LoadingState {
+  String? message;
+  bool isLoading = false;
+  double progress = 0;
+
+  LoadingState({this.message, this.progress = 0, required this.isLoading});
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other is LoadingState &&
+            message == other.message &&
+            isLoading == other.isLoading &&
+            progress == other.progress);
+  }
+
+  @override
+  int get hashCode => Object.hash(message, isLoading, progress);
+
+  LoadingState copyWith({String? message, bool? isLoading, double? progress}) {
+    return LoadingState(
+        message: message ?? this.message,
+        isLoading: isLoading ?? this.isLoading,
+        progress: progress ?? this.progress);
+  }
+}
+
 /// Main model for the UI app
 class GeneModel extends ChangeNotifier {
   static const kAllStages = '__ALL__';
+
+  final ValueNotifier<User?> _userNotifier = ValueNotifier<User?>(null);
 
   final DeploymentFlavor? deploymentFlavor;
 
@@ -30,15 +60,36 @@ class GeneModel extends ChangeNotifier {
   User? _user;
   
   User? get user => _user;
+  ValueNotifier<User?> get userNotifier => _userNotifier;
 
   set user(User? value) {
     _user = value;
+    _userNotifier.value = value;
 
     if (user == null) {
       _reset();
     }
 
     notifyListeners();
+  }
+
+  OrganismMetadata? _metadata;
+
+  OrganismMetadata? get metadata => _metadata;
+
+  set metadata(OrganismMetadata? metadata) {
+    _metadata = metadata;
+    notifyListeners();
+  }
+
+  LoadingState? _loading;
+  LoadingState get loading => _loading ?? LoadingState(isLoading: false);
+
+  set loading(LoadingState state) {
+    if (_loading != state) {
+      _loading = state;
+      notifyListeners();
+    }
   }
 
   // Check if user is signed in
@@ -185,19 +236,40 @@ class GeneModel extends ChangeNotifier {
 
   /// Loads genes and transcript rates from .fasta data
   Future<void> loadFastaFromString(
-      {required String data, Organism? organism, required Function(double progress) progressCallback}) async {
+      {required String data,
+      Organism? organism,
+      required Function(double progress) progressCallback}) async {
+    // TODO exception
+
     _reset();
     name = organism?.name;
     List<Gene> genes;
     List<dynamic> errors;
-    final takeSingleTranscript = organism == null || organism.takeFirstTranscriptOnly;
-    (genes, errors) = await GeneList.parseFasta(
-        data, takeSingleTranscript ? (value) => progressCallback(value / 2) : progressCallback);
+    final takeSingleTranscript =
+        organism == null || organism.takeFirstTranscriptOnly;
+    final stopwatch = Stopwatch()..start();
+    (genes, errors) = switch (metadata) {
+      // loading metadata from comments in fasta
+      null => await GeneList.parseFastaWithComments(
+          data,
+          takeSingleTranscript
+              ? (value) => progressCallback(value / 2)
+              : progressCallback),
+      _ => await GeneList.parseFasta(
+          data,
+          metadata!,
+          takeSingleTranscript
+              ? (value) => progressCallback(value / 2)
+              : progressCallback),
+    };
+
     if (takeSingleTranscript) {
-      (genes, errors) =
-          await GeneList.takeSingleTranscript(genes, errors, (value) => progressCallback(0.5 + value / 2));
+      stopwatch.reset();
+      stopwatch.start();
+      (genes, errors) = await GeneList.takeSingleTranscript(
+          genes, errors, (value) => progressCallback(0.5 + value / 2));
     }
-    
+
     final defaultPreferences = await StagePreference.getDefaults();
     final userPreferences = user?.preferences ?? [];
     final randomPreferences = organism!.stages.map((stage) =>
@@ -212,7 +284,11 @@ class GeneModel extends ChangeNotifier {
         preference.stageName: HexColor.fromHex(preference.color)
     };
 
-    sourceGenes = GeneList.fromList(genes: genes, errors: errors, organism: organism, colors: colors);
+    stopwatch.reset();
+    stopwatch.start();
+    sourceGenes = GeneList.fromList(
+        genes: genes, errors: errors, organism: organism, colors: colors);
+    
     resetAnalysisOptions();
     resetFilter();
     notifyListeners();
