@@ -136,55 +136,26 @@ class _StagePanelState extends State<StagePanel> {
               for (final stage in stageKeys) {
                 sourceGenes?.colors[stage] ??= randomStageColor(stage);
               }
+              
+              final orderedKeys = stageGroups.keys.sorted((a, b) => switch ((a, b)) {
+                ('Other', _) => 1,
+                (_, 'Other') => -1,
+                (String a, String b) => a.compareTo(b)
+              });
 
               return Column(
                 spacing: 8,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  for (final key in stageGroups.keys)
-                    if (key != 'Other')
-                      Column(
-                        spacing: 4,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // don't show 'Other' label when it's the only group
-                          if (stageGroups.length != 1)
-                            Text(key, style: textTheme.titleSmall),
-                          Wrap(
-                            children: [
-                              for (final stage in stageGroups[key]!)
-                                _StageCard(
-                                  name: stage,
-                                  color: sourceGenes?.colors[stage],
-                                  isSelected: _selectedStages.contains(stage) == true,
-                                  onToggle: (value) => _handleToggle(stage, value),
-                                ),
-                            ],
-                          )
-                        ],
-                      ),
-                      // TODO: extract this to a widget
-                      if (stageGroups.containsKey('Other'))
-                        Column(
-                          spacing: 4,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // don't show 'Other' label when it's the only group
-                            if (stageGroups.length != 1)
-                              Text('Other', style: textTheme.titleSmall),
-                            Wrap(
-                              children: [
-                                for (final stage in stageGroups['Other']!)
-                                  _StageCard(
-                                    name: stage,
-                                    color: sourceGenes?.colors[stage],
-                                    isSelected: _selectedStages.contains(stage) == true,
-                                    onToggle: (value) => _handleToggle(stage, value),
-                                  ),
-                              ],
-                            )
-                          ],
-                        ),
+                  for (final key in orderedKeys)
+                    _StageGroup(
+                      stageGroup: stageGroups[key]!,
+                      onStageToggle: _handleToggle,
+                      onGroupToggle: () =>
+                          _handleToggleGroup(stageGroups[key]!),
+                      groupTitle: key,
+                      showGroupTitle: stageGroups.length != 1,
+                    ),
                 ],
               );
             }),
@@ -310,6 +281,20 @@ class _StagePanelState extends State<StagePanel> {
     _handleChanged();
   }
 
+  void _handleToggleGroup(List<String> group) {
+    setState(() {
+      final allSelected = group.every((stage) => _selectedStages.contains(stage));
+      if (!allSelected) {
+        final notSelected =
+            group.where((stage) => !_selectedStages.contains(stage));
+        _selectedStages.addAll(notSelected);
+      } else {
+        _selectedStages.removeWhere((stage) => group.contains(stage));
+      }
+      _handleChanged();
+    });
+  }
+
   Map<String, List<String>> _groupStages(List<String> stages) {
     final stageGroups = <String, List<String>>{};
     final allGroups = groupBy(stages, (String key) => key.split('_').first);
@@ -413,4 +398,51 @@ class _StageCard extends StatelessWidget {
       }
     });
   }
+}
+
+class _StageGroup extends StatelessWidget {
+  final List<String> stageGroup;
+  final String? groupTitle;
+  final bool showGroupTitle;
+  final Function(String, bool)  onStageToggle;
+  final VoidCallback onGroupToggle;
+
+  const _StageGroup(
+      {required this.stageGroup,
+      required this.onStageToggle,
+      required this.onGroupToggle,
+      this.groupTitle = '',
+      this.showGroupTitle = true});
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final sourceGenes = context.select<GeneModel, GeneList?>((model) => model.sourceGenes);
+    final filter = GeneModel.of(context).stageSelection ?? StageSelection(selectedStages: []);
+    return Column(
+      spacing: 4,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+          if (showGroupTitle)
+            Text(groupTitle ?? '', style: textTheme.titleSmall),
+          TextButton(
+              onPressed: onGroupToggle,
+              child: const Text('Toggle group')),
+        ]),
+        Wrap(
+          children: [
+            for (final stage in stageGroup)
+              _StageCard(
+                name: stage,
+                color: sourceGenes?.colors[stage],
+                isSelected: filter.selectedStages.contains(stage),
+                onToggle: (value) => onStageToggle(stage, value),
+              ),
+          ],
+        )
+      ],
+    );
+  }
+
 }
