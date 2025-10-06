@@ -1,16 +1,14 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
-import 'package:geneweb/analysis/organism.dart';
 import 'package:geneweb/api/organism.dart';
 import 'package:geneweb/genes/stage_selection.dart';
 import 'package:geneweb/genes/gene.dart';
 import 'package:geneweb/utilities/series.dart';
 
-import 'package:geneweb/utilities/stages.dart';
 
 /// Holds a list of genes
 class GeneList extends Equatable {
-  /// Name of the organism. This is used for auto detecting colors and stage order
+  /// The source organism
   final Organism? organism;
 
   final List<dynamic> errors;
@@ -33,7 +31,7 @@ class GeneList extends Equatable {
   List<Gene> get genes => _genes;
 
   /// Map of colors to be applied for given stage
-  Map<String, Color> get colors => _colors ?? _colorsFromStages();
+  Map<String, Color> get colors => _colors ?? {};
 
   /// Stroke width for stages
   Map<String, int> get stroke => _strokeFromStages();
@@ -116,25 +114,30 @@ class GeneList extends Equatable {
   /// Feed the result to [GeneList.fromList]
   static Future<(List<Gene>, List<dynamic>)> takeSingleTranscript(
       List<Gene> genes, List<dynamic> errors, Function(double progress) progressCallback) async {
-    Map<String, List<String>> keys = {};
+    final geneMap = <String, Gene>{};
+    final transcriptsByGene = <String, List<String>>{};
 
     for (final gene in genes) {
+      geneMap[gene.geneId] = gene;
       final geneCode = gene.geneCode;
-      keys[geneCode] = [...(keys[geneCode] ?? []), gene.geneId];
+      transcriptsByGene.putIfAbsent(geneCode, () => []).add(gene.geneId);
     }
 
     List<Gene> merged = [];
     int cnt = 0;
-    for (final key in keys.keys) {
+
+    for (final entry in transcriptsByGene.entries) {
       // Insert a delay so that we do not block the UI thread for too long
-      if (cnt++ % 1000 == 0) {
-        progressCallback(cnt / keys.length);
-        await Future.delayed(const Duration(milliseconds: 20));
+      if (cnt++ % 5000 == 0) {
+        progressCallback(cnt / transcriptsByGene.length);
+        await Future.delayed(const Duration(milliseconds: 5));
       }
-      keys[key]!.sort();
-      final first = keys[key]!.first;
-      merged.add(genes.firstWhere((gene) => gene.geneId == first));
+
+      entry.value.sort();
+      final first = entry.value.first;
+      merged.add(geneMap[first]!);
     }
+
     debugPrint('.fasta transcript filtering completed with ${merged.length} genes and ${errors.length} errors');
     return (merged, errors);
   }
@@ -176,32 +179,7 @@ class GeneList extends Equatable {
   /// Uses [stages] or [transcriptionRates]
   /// Returns stages ordered by developments stage for known organisms
   List<String> get stageKeys {
-    final detected = stages != null ? stages!.keys.toList() : transcriptionRates.keys.toList();
-    final List<String> result = [];
-    if (organism?.stages.isNotEmpty == true) {
-      for (final stage in organism!.stages) {
-        if (detected.contains(stage.stage)) {
-          result.add(stage.stage);
-        }
-      }
-      for (final stage in detected) {
-        if (!result.contains(stage)) {
-          result.add(stage);
-        }
-      }
-    } else {
-      result.addAll(detected);
-    }
-    return result;
-  }
-
-  /// Get keys for stages that should be selected by default
-  List<String> get defaultSelectedStageKeys {
-    final keys = stageKeys;
-    if (organism?.stages.isNotEmpty == true) {
-      return organism!.stages.where((s) => s.isCheckedByDefault && keys.contains(s.stage)).map((s) => s.stage).toList();
-    }
-    return keys;
+    return stages != null ? stages!.keys.toList() : transcriptionRates.keys.toList();
   }
 
   /// Filters gene for given [stage]. Either uses [stages] or applies [stageSelection], if specified
@@ -310,27 +288,12 @@ class GeneList extends Equatable {
     return result.toList();
   }
 
-  Map<String, Color> _colorsFromStages() {
-    if (organism?.stages.isNotEmpty == true) {
-      final result = <String, Color>{};
-      for (final stage in organism!.stages) {
-        result[stage.stage] = stage.color;
-      }
-      for (final stage in stageKeys) {
-        if (!result.containsKey(stage)) {
-          result[stage] = randomStageColor(stage);
-        }
-      }
-      return result;
-    }
-    return {};
-  }
-
   Map<String, int> _strokeFromStages() {
     if (organism?.stages.isNotEmpty == true) {
       final result = <String, int>{};
       for (final stage in organism!.stages) {
-        result[stage.stage] = stage.stroke;
+        // TODO: make this a constant? or remove completely
+        result[stage] = 4;
       }
       return result;
     }

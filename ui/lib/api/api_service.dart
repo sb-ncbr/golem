@@ -96,8 +96,11 @@ class ApiService {
   Future<ApiResponse> download(String path,
       {Map<String, dynamic>? queryParameters}) async {
     try {
-      final response = await dio.get(path,
-          options: Options(responseType: ResponseType.bytes));
+      final response = await dio.get(
+        path,
+        options:
+            Options(responseType: ResponseType.plain, responseDecoder: null),
+      );
 
       return ApiResponse.success(response.data);
     } catch (e) {

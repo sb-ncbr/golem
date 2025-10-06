@@ -76,4 +76,8 @@ async def download_organism(
     if not path.exists():
         raise not_found_exception
 
-    return FileResponse(path.absolute())
+    return FileResponse(
+        path.absolute(),
+        media_type="application/gzip",
+        headers={"Content-Encoding": "gzip"},
+    )

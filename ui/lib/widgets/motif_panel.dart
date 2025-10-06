@@ -2,7 +2,6 @@ import 'dart:collection';
 
 import 'package:flutter/material.dart';
 import 'package:geneweb/analysis/motif.dart';
-import 'package:geneweb/api/api_service.dart';
 import 'package:geneweb/api/motif.dart';
 import 'package:geneweb/api/organism.dart';
 import 'package:geneweb/genes/gene_list.dart';
@@ -33,19 +32,19 @@ class MotifSubtitle extends StatelessWidget {
 /// Widget that builds the panel with motif selection
 class MotifPanel extends StatefulWidget {
   final Function(List<Motif> motif) onChanged;
+  final List<Motif> motifs;
 
-  const MotifPanel({super.key, required this.onChanged});
+  const MotifPanel({super.key, required this.onChanged, required this.motifs});
 
   @override
-  State<MotifPanel> createState() => _MotifPanelState();
+  // ignore: no_logic_in_create_state
+  State<MotifPanel> createState() => _MotifPanelState(motifs);
 }
 
 class _MotifPanelState extends State<MotifPanel> {
   final _formKey = GlobalKey<FormState>();
   late final _model = GeneModel.of(context);
-  late Future<List<Motif>> _futureMotifs;
-  late List<Motif> _loadedMotifs;
-
+  
   String? _customMotifName;
   String? _customMotifDefinition;
   String? _customMotifError;
@@ -54,12 +53,15 @@ class _MotifPanelState extends State<MotifPanel> {
   final _reverseComplementsController = TextEditingController();
   bool _showEditor = false;
   
+  late final List<Motif> _motifs;
+
+  _MotifPanelState(List<Motif> motifs) {
+    _motifs = motifs;
+  }
 
   @override
   void initState() {
     super.initState();
-    _fetchMotifs();
-    context.read<GeneModel>().userNotifier.addListener(_fetchMotifs);
   }
 
   @override
@@ -67,7 +69,6 @@ class _MotifPanelState extends State<MotifPanel> {
     _nameController.dispose();
     _definitionController.dispose();
     _reverseComplementsController.dispose();
-    context.read<GeneModel>().userNotifier.removeListener(_fetchMotifs);
     super.dispose();
   }
 
@@ -79,7 +80,8 @@ class _MotifPanelState extends State<MotifPanel> {
     final motifs = context.select<GeneModel, List<Motif>>((model) => model.motifs);
     final customMotifs = motifs.where((m) => m.isCustom).toList();
     final textTheme = Theme.of(context).textTheme;
-
+    final motifGroups = _groupMotifs(_motifs);
+    
     return Align(
       alignment: Alignment.topLeft,
       child: Form(
@@ -117,43 +119,36 @@ class _MotifPanelState extends State<MotifPanel> {
             const SizedBox(height: 16.0),
             const Text('PRESETS'),
             const SizedBox(height: 16.0),
-            FutureBuilder(
-                future: _futureMotifs,
-                builder: (context, snapshot) {
-                  if (snapshot.hasData) {
-                    final motifGroups = _groupMotifs(_loadedMotifs);
-                    return Column(
-                      spacing: 8.0,
+            Column(
+              spacing: 8.0,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (final group in motifGroups.entries)
+                  Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        for (final group in motifGroups.entries)
-                          Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                if (motifGroups.length != 1)
-                                  Text(group.key, style: textTheme.titleSmall),
-                                Wrap(
-                                  spacing: 4,
-                                  runSpacing: 4,
-                                  crossAxisAlignment: WrapCrossAlignment.center,
-                                  children: [
-                                    ...group.value.map((m) => _MotifCard(
-                                          motif: m,
-                                          onToggle: (bool value) =>
-                                              _handlePresetToggled(m, value),
-                                          isSelected: motifs.contains(m),
-                                          onDelete: _fetchMotifs,
-                                        )),
-                                  ],
-                                )
-                              ])
-                      ],
-                    );
-                  } else if (snapshot.hasError) {
-                    return Text('${snapshot.error}');
-                  }
-                  return const CircularProgressIndicator();
-                }),
+                        if (motifGroups.length != 1)
+                          Text(group.key, style: textTheme.titleSmall),
+                        Wrap(
+                          spacing: 4,
+                          runSpacing: 4,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            ...group.value.map((m) => _MotifCard(
+                                  motif: m,
+                                  onToggle: (bool value) =>
+                                      _handlePresetToggled(m, value),
+                                  isSelected: motifs.contains(m),
+                                  onDelete: () => setState(() {
+                                    _motifs
+                                        .removeWhere((idk) => idk.id == m.id);
+                                  }),
+                                )),
+                          ],
+                        )
+                      ])
+              ],
+            )
           ],
         ),
       ),
@@ -211,13 +206,6 @@ class _MotifPanelState extends State<MotifPanel> {
         ElevatedButton(onPressed: _handleAddMotif, child: const Text('ADD')),
       ],
     );
-  }
-
-  void _fetchMotifs() {
-    setState(() {
-      _futureMotifs = fetchMotifs();
-      _futureMotifs.then((value) => _loadedMotifs = value);
-    });
   }
 
   SplayTreeMap<String, List<Motif>> _groupMotifs(List<Motif> motifs) {
@@ -283,7 +271,7 @@ class _MotifPanelState extends State<MotifPanel> {
 
       if (_model.isSignedIn) {
         final newMotif = await createMotif(motif);
-        _loadedMotifs.add(newMotif);
+        _motifs.add(newMotif);
       } else {
         _model.setMotifs([motif, ..._model.motifs]);
       }

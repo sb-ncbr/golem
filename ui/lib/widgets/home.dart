@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:geneweb/analysis/analysis_options.dart';
 import 'package:geneweb/analysis/motif.dart';
+import 'package:geneweb/api/motif.dart';
 import 'package:geneweb/genes/gene_list.dart';
 import 'package:geneweb/genes/stage_selection.dart';
 import 'package:geneweb/genes/gene_model.dart';
@@ -23,12 +24,14 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   late final _model = GeneModel.of(context);
-
+  late Future<List<Motif>> _futureMotifs;
   late int _index = 0;
 
   @override
   void initState() {
     super.initState();
+    _futureMotifs = fetchMotifs();
+    context.read<GeneModel>().userNotifier.addListener(_fetchMotifs);
     /*
     for (final motif in Presets.analyzedMotifs) {
       debugPrint(motif.name);
@@ -37,6 +40,16 @@ class _HomeState extends State<Home> {
       debugPrint('\n');
     }
     */
+  }
+
+  @override
+  void dispose() {
+    context.read<GeneModel>().userNotifier.removeListener(_fetchMotifs);
+    super.dispose();
+  }
+
+  void _fetchMotifs() {
+    _futureMotifs = fetchMotifs();
   }
 
   @override
@@ -79,7 +92,15 @@ class _HomeState extends State<Home> {
               Step(
                 title: const Text('Analyzed motifs'),
                 subtitle: const MotifSubtitle(),
-                content: MotifPanel(key: ValueKey(organismAndStages), onChanged: _handleMotifsChanged),
+                content: FutureBuilder(future: _futureMotifs, builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    return MotifPanel(key: ValueKey(organismAndStages), motifs: snapshot.data!, onChanged: _handleMotifsChanged);
+                  } else if (snapshot.hasError) {
+                    return Text('${snapshot.error}');
+                  }
+                  
+                  return const CircularProgressIndicator();
+                }),
                 state: expectedResults > 60 && motifs.length > 5
                     ? StepState.error
                     : motifs.isEmpty
@@ -157,7 +178,12 @@ class _HomeState extends State<Home> {
   }
 
   void _handleMotifsChanged(List<Motif> motifs) {
-    GeneModel.of(context).setMotifs(motifs);
+    final model = GeneModel.of(context);
+    model.setMotifs(motifs);
+
+    if (model.isSignedIn) {
+      _fetchMotifs();
+    }
   }
 
   void _handleAnalysisOptionsChanged(AnalysisOptions options) {

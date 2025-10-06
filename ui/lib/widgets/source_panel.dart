@@ -1,19 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:archive/archive.dart';
 import 'package:collection/collection.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:geneweb/analysis/organism.dart';
-import 'package:geneweb/analysis/organism_presets.dart';
 import 'package:geneweb/api/api_service.dart';
 import 'package:geneweb/api/organism.dart';
 import 'package:geneweb/genes/gene_list.dart';
 import 'package:geneweb/genes/gene_model.dart';
-import 'package:geneweb/utilities/gzip_service.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 /// Widget shown just below the panel headline
@@ -55,7 +50,7 @@ class _SourcePanelState extends State<SourcePanel> {
 
   late final _model = GeneModel.of(context);
   late final _scaffoldMessenger = ScaffoldMessenger.of(context);
-  late Future<List<NewOrganism>> futureOrganisms;
+  late Future<List<Organism>> futureOrganisms;
 
   @override
   Widget build(BuildContext context) {
@@ -142,8 +137,8 @@ class _SourcePanelState extends State<SourcePanel> {
     );
   }
 
-  Map<String, List<NewOrganism>> _groupOrganisms(List<NewOrganism> organisms) {
-    final organismGroups = <String, List<NewOrganism>>{};
+  Map<String, List<Organism>> _groupOrganisms(List<Organism> organisms) {
+    final organismGroups = <String, List<Organism>>{};
 
     for (final organism in organisms) {
       if (organism.public) {
@@ -212,25 +207,23 @@ class _SourcePanelState extends State<SourcePanel> {
   }
 
 
-  Future<void> _handlePickOrganism(NewOrganism organism) async {
+  Future<void> _handlePickOrganism(Organism organism) async {
     final model = GeneModel.of(context);
     await _handleDownloadMetadata(organism);
 
 
-    final content = await _downloadAndUnarchive(organism.sequencesFilename);
-    final contentString = const Utf8Decoder().convert(content);
-    final contentSizeMb = content.length ~/ (1024 * 1024);
+    final content = await _download(organism.sequencesFilename);
     final filename = organism.sequencesFilename.replaceAll('.gz', '');
 
     model.loading = LoadingState(
         isLoading: true,
         progress: 0.8,
-        message: 'Analyzing $filename ($contentSizeMb MB)…');
+        message: 'Analyzing $filename…');
 
     await Future.delayed(const Duration(milliseconds: 20));
     await model.loadFastaFromString(
-        organism: OrganismPresets.organismByFileName(filename),
-        data: contentString,
+        organism: organism,
+        data: content,
         progressCallback: (value) {
           model.loading = model.loading.copyWith(progress: 0.8 + value * 0.2);
         });
@@ -245,10 +238,14 @@ class _SourcePanelState extends State<SourcePanel> {
       if (result == null) {
         return;
       }
+
+      _model.metadata = null;
+
       final filename = result.files.single.name;
       setState(() => _loadingMessage = 'Loading $filename…');
       await Future.delayed(const Duration(milliseconds: 100));
-      final organism = OrganismPresets.organismByFileName(filename);
+      
+      final organism = Organism.fromFile(filename);
       if (kIsWeb) {
         final data = const Utf8Decoder().convert(result.files.single.bytes!);
         debugPrint('Loaded ${data.length ~/ (1024 * 1024)} MB');
@@ -325,7 +322,7 @@ class _SourcePanelState extends State<SourcePanel> {
     }
   }
 
-  Future<void> _handleDownloadMetadata(NewOrganism organism) async {
+  Future<void> _handleDownloadMetadata(Organism organism) async {
     final model = GeneModel.of(context);
 
     setState(() => _loadingMessage = 'Loading ${organism.name} metadata…');
@@ -339,12 +336,15 @@ class _SourcePanelState extends State<SourcePanel> {
 
     model.metadata = metadata;
 
+    final stages = metadata?.values.firstOrNull?.transcriptionRates.keys ?? [];
+    organism.stages.addAll(stages);
+
     widget.onShouldClose();
     setState(() => _loadingMessage = null);
     setState(() => _progress = null);
   }
   
-  Future<List<int>> _downloadAndUnarchive(String filename) async {
+  Future<String> _download(String filename) async {
     final model = GeneModel.of(context);
     try {
       model.loading = LoadingState(isLoading: true, message: 'Downloading $filename.', progress: 0.3);
@@ -362,19 +362,7 @@ class _SourcePanelState extends State<SourcePanel> {
         throw Exception(response.message);
       }
 
-      Uint8List bytes = response.data;
-      
-      final bytesSizeMb = bytes.length ~/ (1024 * 1024);
-      debugPrint('Downloaded $bytesSizeMb MB');
-      if (mounted) {
-        model.loading = LoadingState(isLoading: true, message: 'Decompressing $bytesSizeMb MB…', progress: 0.7);
-      }
-
-      await Future.delayed(const Duration(milliseconds: 100));
-      final decompressed = await GZipService.instance.decompress(bytes);
-      
-      model.loading = LoadingState(isLoading: false);
-      return decompressed;
+      return response.data;
     } catch (_) {
       model.loading = LoadingState(isLoading: false);
       rethrow;
@@ -425,7 +413,7 @@ class _SourcePanelState extends State<SourcePanel> {
     }
   }
 
-  Future<List<NewOrganism>> _fetchOrganisms() async {
+  Future<List<Organism>> _fetchOrganisms() async {
     return fetchOrganisms(
             onError: (message) => _scaffoldMessenger.showSnackBar(SnackBar(
                   content: Text(message),
@@ -436,36 +424,33 @@ class _SourcePanelState extends State<SourcePanel> {
 }
 
 class _OrganismGroup extends StatelessWidget {
-
-  final List<NewOrganism> organisms;
+  final List<Organism> organisms;
   final String title;
   final bool showTitle;
-  final Function(NewOrganism) onPickOrganism;
+  final Function(Organism) onPickOrganism;
 
-  const _OrganismGroup({required this.organisms, required this.onPickOrganism, this.title = '', this.showTitle = true,});
+  const _OrganismGroup({
+    required this.organisms,
+    required this.onPickOrganism,
+    this.title = '',
+    this.showTitle = true,
+  });
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (showTitle)
-          Text(title, style: textTheme.titleSmall),
+        if (showTitle) Text(title, style: textTheme.titleSmall),
         Wrap(
           spacing: 8.0,
           runSpacing: 8.0,
           children: [
-            ...organisms
-                .map(
+            ...organisms.map(
               (organism) => _OrganismCard(
-                  organism: Organism(
-                      name: organism.name,
-                      description: organism.description,
-                      filename: organism.sequencesFilename,
-                      takeFirstTranscriptOnly: organism.takeFirstTranscriptOnly,
-                      public: organism.public),
+                  organism: organism,
                   onSelected: () => onPickOrganism(organism)),
             )
           ],

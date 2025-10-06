@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:geneweb/analysis/analysis_series.dart';
 import 'package:geneweb/analysis/analysis_options.dart';
 import 'package:geneweb/analysis/motif.dart';
-import 'package:geneweb/analysis/organism.dart';
 import 'package:geneweb/api/auth.dart';
 import 'package:geneweb/api/organism.dart';
 import 'package:geneweb/genes/gene.dart';
@@ -15,6 +14,7 @@ import 'package:geneweb/genes/tpm_data.dart';
 import 'package:geneweb/my_app.dart';
 import 'package:geneweb/utilities/color.dart';
 import 'package:geneweb/utilities/list.dart';
+import 'package:geneweb/utilities/stages.dart';
 import 'package:provider/provider.dart';
 import 'package:universal_file/universal_file.dart';
 
@@ -225,9 +225,8 @@ class GeneModel extends ChangeNotifier {
   }
 
   void resetFilter() {
-    final selectedStages = sourceGenes?.defaultSelectedStageKeys ?? [];
     _stageSelection = StageSelection(
-      selectedStages: [kAllStages, ...selectedStages],
+      selectedStages: [],
       strategy: sourceGenes?.stages != null ? null : FilterStrategy.top,
       selection: sourceGenes?.stages != null ? null : FilterSelection.percentile,
       count: sourceGenes?.stages != null ? null : 3200,
@@ -247,7 +246,6 @@ class GeneModel extends ChangeNotifier {
     List<dynamic> errors;
     final takeSingleTranscript =
         organism == null || organism.takeFirstTranscriptOnly;
-    final stopwatch = Stopwatch()..start();
     (genes, errors) = switch (metadata) {
       // loading metadata from comments in fasta
       null => await GeneList.parseFastaWithComments(
@@ -263,17 +261,13 @@ class GeneModel extends ChangeNotifier {
               : progressCallback),
     };
 
-    if (takeSingleTranscript) {
-      stopwatch.reset();
-      stopwatch.start();
-      (genes, errors) = await GeneList.takeSingleTranscript(
-          genes, errors, (value) => progressCallback(0.5 + value / 2));
-    }
+    resetAnalysisOptions();
+    resetFilter();
 
     final defaultPreferences = await StagePreference.getDefaults();
     final userPreferences = user?.preferences ?? [];
     final randomPreferences = organism!.stages.map((stage) =>
-        StagePreference(stageName: stage.stage, color: stage.color.toHex()));
+        StagePreference(stageName: stage, color: randomStageColor(stage).toHex()));
     final preferences = [
       ...userPreferences, // user preferences have the highest priority
       ...defaultPreferences, // then preferences of the organism
@@ -284,13 +278,15 @@ class GeneModel extends ChangeNotifier {
         preference.stageName: HexColor.fromHex(preference.color)
     };
 
-    stopwatch.reset();
-    stopwatch.start();
     sourceGenes = GeneList.fromList(
         genes: genes, errors: errors, organism: organism, colors: colors);
+
+    if (takeSingleTranscript) {
+      (genes, errors) = await GeneList.takeSingleTranscript(
+          genes, errors, (value) => progressCallback(0.5 + value / 2));
+      sourceGenes = sourceGenes!.copyWith(genes: genes, errors: errors);
+    }
     
-    resetAnalysisOptions();
-    resetFilter();
     notifyListeners();
   }
 

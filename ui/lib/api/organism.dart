@@ -2,19 +2,37 @@ import 'dart:convert';
 
 import 'package:geneweb/api/api_service.dart';
 import 'package:geneweb/api/auth.dart';
-import 'package:geneweb/utilities/gzip_service.dart';
 
-class NewOrganism {
+// TODO: move somewhere else
+class Organism {
+  /// The unique id of the organism
   final String id;
+  
+  /// The name of the organism
   final String name;
+  
+  /// The description of the organism
   final String? description;
+  
+  /// File (name) where the sequences are stored (fasta)
   final String sequencesFilename;
+  
+  /// File (name) where the metadata are stored (json)
   final String metadataFilename;
+  
+  /// Whether to take only the first transcript of each gene
   final bool takeFirstTranscriptOnly;
+  
+  /// Whether the organism is visible to everyone (every group)
   final bool public;
+
+  /// Groups for which the ogranism is visible
   final List<UserGroup> groups;
 
-  const NewOrganism(
+  /// List of stages of the organism
+  List<String> stages = [];
+
+  Organism(
       {required this.id,
       required this.name,
       this.description,
@@ -24,7 +42,7 @@ class NewOrganism {
       required this.public,
       required this.groups});
 
-  factory NewOrganism.fromJson(Map<String, dynamic> json) {
+  factory Organism.fromJson(Map<String, dynamic> json) {
     return switch (json) {
       {
         'id': String id,
@@ -36,7 +54,7 @@ class NewOrganism {
         'public': bool public,
         'groups': List<dynamic> groups,
       } =>
-        NewOrganism(
+        Organism(
             id: id,
             name: name,
             description: description,
@@ -48,9 +66,26 @@ class NewOrganism {
       _ => throw const FormatException('Failed to load organism.')
     };
   }
+
+  factory Organism.fromFile(String filename) {
+    final name = RegExp(r'([A-Za-z0-9_]+).*')
+            .firstMatch(filename)
+            ?.group(1)
+            ?.replaceAll('_', ' ') ??
+        'Unknown organism';
+        
+    return Organism(
+        id: '<id>',
+        name: name,
+        sequencesFilename: filename,
+        metadataFilename: '',
+        takeFirstTranscriptOnly: true,
+        public: false,
+        groups: []);
+  }
 }
 
-Future<List<NewOrganism>> fetchOrganisms({
+Future<List<Organism>> fetchOrganisms({
   Function(String)? onError,
 }) async {
   final response = await ApiService.instance.get('/organisms');
@@ -61,7 +96,7 @@ Future<List<NewOrganism>> fetchOrganisms({
   }
 
   return (response.data as List<dynamic>)
-      .map((organism) => NewOrganism.fromJson(organism as Map<String, dynamic>))
+      .map((organism) => Organism.fromJson(organism as Map<String, dynamic>))
       .toList();
 }
 
@@ -89,7 +124,7 @@ class SequenceMetadata {
 typedef OrganismMetadata = Map<String, SequenceMetadata>;
 
 Future<OrganismMetadata?> fetchMetadata(
-    {required NewOrganism organism, Function(String)? onError}) async {
+    {required Organism organism, Function(String)? onError}) async {
   final response = await ApiService.instance
       .download('/organisms/${organism.metadataFilename}');
 
@@ -98,9 +133,6 @@ Future<OrganismMetadata?> fetchMetadata(
     return null;
   }
 
-  final metadata = const Utf8Decoder()
-      .convert(await GZipService.instance.decompress(response.data));
-
-  return (json.decode(metadata) as Map<String, dynamic>)
+  return (json.decode(response.data) as Map<String, dynamic>)
       .map((key, value) => MapEntry(key, SequenceMetadata.fromJson(value)));
 }

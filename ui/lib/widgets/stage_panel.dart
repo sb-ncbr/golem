@@ -109,11 +109,11 @@ class _StagePanelState extends State<StagePanel> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('GENOME', style: textTheme.titleSmall),
-            Text('Distribution of the motif across the genome.', style: textTheme.bodySmall),
+            Text('ALL GENES', style: textTheme.titleSmall),
+            Text('Distribution of the motif across all genes.', style: textTheme.bodySmall),
             const SizedBox(height: 16),
             _StageCard(
-              name: 'GENOME',
+              name: 'ALL GENES',
               color: null,
               isSelected: _selectedStages.contains(GeneModel.kAllStages) == true,
               showPicker: false,
@@ -418,7 +418,7 @@ class _StageGroup extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final sourceGenes = context.select<GeneModel, GeneList?>((model) => model.sourceGenes);
-    final filter = GeneModel.of(context).stageSelection ?? StageSelection(selectedStages: []);
+    final filter = context.select<GeneModel, StageSelection>((model) => model.stageSelection ?? StageSelection(selectedStages: []));
     return Column(
       spacing: 4,
       crossAxisAlignment: CrossAxisAlignment.start,
