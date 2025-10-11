@@ -180,14 +180,17 @@ class GeneModel extends ChangeNotifier {
     if (user == null) {
       return;
     }
+    
     final preferences = user!.preferences;
-    final preference =
-        preferences.firstWhereOrNull((pref) => pref.stageName == stageName);
+    final organism = sourceGenes!.organism;
+    final preference = preferences.firstWhereOrNull((pref) =>
+        pref.stageName == stageName && pref.organismId == organism?.id);
+
     if (preference != null) {
       preference.color = color;
     } else {
-      user!.preferences
-          .add(StagePreference(stageName: stageName, color: color));
+      user!.preferences.add(StagePreference(
+          organismId: sourceGenes?.organism?.id, stageName: stageName, color: color));
     }
 
     if (sourceGenes != null) {
@@ -265,7 +268,9 @@ class GeneModel extends ChangeNotifier {
     resetFilter();
 
     final defaultPreferences = await StagePreference.getDefaults();
-    final userPreferences = user?.preferences ?? [];
+    final userPreferences =
+        user?.preferences.where((pref) => pref.organismId == organism?.id) ??
+            [];
     final randomPreferences = organism!.stages.map((stage) =>
         StagePreference(stageName: stage, color: randomStageColor(stage).toHex()));
     final preferences = [

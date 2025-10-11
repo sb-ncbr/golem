@@ -384,16 +384,20 @@ class _StageCard extends StatelessWidget {
     );
   }
 
-    void _showColorPickerDialog(BuildContext context, String stage) {
+  void _showColorPickerDialog(BuildContext context, String stage) {
     showColorPickerDialog(context: context, selected: color ?? Colors.grey)
         .then((newColor) async {
-      if (newColor != null) {
-        final response = await StagePreference.updatePreference(
-            StagePreference(stageName: name, color: newColor.toHex()));
+      if (newColor != null && context.mounted) {
+        final organism = GeneModel.of(context).sourceGenes?.organism;
+        final response = await StagePreference.updatePreference(StagePreference(
+            stageName: name,
+            color: newColor.toHex(),
+            organismId: organism?.id));
         if (!response.success && context.mounted) {
           context.showMessage(response.message);
         } else if (context.mounted) {
-          GeneModel.of(context).setStagePreferenceColor(stage, newColor.toHex());
+          GeneModel.of(context)
+              .setStagePreferenceColor(stage, newColor.toHex());
         }
       }
     });

@@ -5,6 +5,7 @@ from app.api.v1.schemas.preference import PreferenceUpdateRequest, PreferenceRes
 from app.api.v1.schemas.response import ResponseSingle, ResponseList
 from app.db.models.stage_preference import UserStagePreference
 from app.db.models.user import User
+from app.db.repositories.organism import OrganismRepository, OrganismFilters
 from app.db.repositories.preference import PreferenceRepository
 from app.db.repositories.user import UserRepository
 from app.services.auth import get_current_user
@@ -18,20 +19,30 @@ async def preferences(
     data: PreferenceUpdateRequest,
     user: User = Depends(get_current_user),
     user_repository: UserRepository = Depends(UserRepository),
+    organism_repository: OrganismRepository = Depends(OrganismRepository),
 ) -> ResponseSingle[PreferenceResponse]:
     try:
+        user_organisms = await organism_repository.get(OrganismFilters(user_id=user.id))
+
+        if not any(organism.id == data.organism_id for organism in user_organisms):
+            raise HTTPException(status_code=404, detail="Organism not found")
+
         preference = next(
             (
                 preference
                 for preference in user.stage_preferences
                 if preference.stage_name == data.stage_name
+                and preference.organism_id == data.organism_id
             ),
             None,
         )
 
         if preference is None:
             preference = UserStagePreference(
-                stage_name=data.stage_name, color=data.color, user_id=user.id
+                stage_name=data.stage_name,
+                color=data.color,
+                user_id=user.id,
+                organism_id=data.organism_id,
             )
             user.stage_preferences.append(preference)
         else:
@@ -40,10 +51,16 @@ async def preferences(
         await user_repository.update(user)
 
         return ResponseSingle(
-            data=PreferenceResponse(stage_name=data.stage_name, color=data.color)
+            data=PreferenceResponse(
+                stage_name=data.stage_name,
+                color=data.color,
+                organism_id=preference.organism_id,
+            )
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail="Invalid color format.") from e
+    except HTTPException as e:
+        raise e
     except Exception as e:
         raise HTTPException(
             status_code=400, detail="Something went wrong when updating preference."

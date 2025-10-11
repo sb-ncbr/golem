@@ -1,5 +1,7 @@
 import 'package:geneweb/api/api_service.dart';
 
+// TODO: move classes somewhere else
+
 class UserGroup {
   final String id;
   final String name;
@@ -19,13 +21,22 @@ class UserGroup {
 }
 
 class StagePreference {
+  final String? organismId;
   final String stageName;
   String color;
 
-  StagePreference({required this.stageName, required this.color});
+  StagePreference(
+      {required this.stageName, required this.color, this.organismId});
 
   factory StagePreference.fromJson(Map<String, dynamic> json) {
     return switch (json) {
+      {
+        'stageName': String stageName,
+        'color': String color,
+        'organismId': String organismId
+      } =>
+        StagePreference(
+            stageName: stageName, color: color, organismId: organismId),
       {
         'stageName': String stageName,
         'color': String color,
@@ -37,8 +48,15 @@ class StagePreference {
 
   static Future<ApiResponse> updatePreference(
       StagePreference preference) async {
-    return ApiService.instance.put("/preferences",
-        data: {'stageName': preference.stageName, 'color': preference.color});
+    if (preference.organismId == null) {
+      throw Exception('Organism not provided');
+    }
+
+    return ApiService.instance.put("/preferences", data: {
+      'stageName': preference.stageName,
+      'color': preference.color,
+      'organismId': preference.organismId
+    });
   }
 
   static Future<List<StagePreference>> getDefaults() async {

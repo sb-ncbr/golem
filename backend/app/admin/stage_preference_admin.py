@@ -18,6 +18,7 @@ class UserStagePreferenceAdminView(AdminViewBase):
         "stage_name",
         HexColorField("color", label="Color", required=True),
         "user",
+        "organism"
     ]
 
     async def create(self, request: Request, data: dict) -> UserStagePreference:

@@ -3,6 +3,7 @@ import uuid
 from sqlmodel import SQLModel, Field, Relationship
 
 from app.db.models.group import Group, OrganismGroup
+from app.db.models.stage_preference import UserStagePreference
 
 
 class Organism(SQLModel, table=True):
@@ -23,6 +24,11 @@ class Organism(SQLModel, table=True):
         link_model=OrganismGroup,
         sa_relationship_kwargs={"lazy": "selectin"},
     )
+    stage_preferences: list[UserStagePreference] = Relationship(
+        back_populates="organism",
+        sa_relationship_kwargs={"lazy": "selectin"},
+    )
+
 
     def __admin_repr__(self, request) -> str:
         """

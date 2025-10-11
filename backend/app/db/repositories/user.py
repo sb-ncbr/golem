@@ -63,7 +63,7 @@ class UserRepository:
             User: The updated user.
         """
 
-        self.session.add(user)
+        user = await self.session.merge(user)
         await self.session.commit()
         await self.session.refresh(user)
 
