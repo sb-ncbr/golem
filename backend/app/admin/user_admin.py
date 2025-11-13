@@ -59,7 +59,7 @@ class UserAdminView(AdminViewBase):
             raise FormValidationError(errors)
 
         hashed_password = get_password_hash(password)
-        groups = self._get_groups(session, group_ids)
+        groups = await self._get_groups(session, group_ids)
         user = User(username=username, hashed_password=hashed_password, groups=groups)
 
         session.add(user)
