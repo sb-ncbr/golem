@@ -73,10 +73,11 @@ class _AnalysisOptionsPanelState extends State<AnalysisOptionsPanel> {
 
   @override
   Widget build(BuildContext context) {
-    final publicSite = context.select<GeneModel, bool>((model) => model.publicSite);
+    final isSignedIn = context.select<GeneModel, bool>((model) => model.isSignedIn);
     final markers =
         context.select<GeneModel, List<String>>((model) => model.metadata?.values.firstOrNull?.markers.keys.toList() ?? []);
     markers.sort();
+
     return Align(
       alignment: Alignment.topLeft,
       child: Form(
@@ -93,8 +94,8 @@ class _AnalysisOptionsPanelState extends State<AnalysisOptionsPanel> {
                   width: 300,
                   child: DropdownButtonFormField<String?>(
                     items: [
-                      if (!publicSite) const DropdownMenuItem(value: null, child: Text('Sequence start')),
                       for (final marker in markers) DropdownMenuItem(value: marker, child: Text(marker.toUpperCase())),
+                      if (isSignedIn) const DropdownMenuItem(value: null, child: Text('Sequence start')),
                     ],
                     onChanged: (value) {
                       setState(() => _alignMarker = value);

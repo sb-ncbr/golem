@@ -79,6 +79,7 @@ class GeneModel extends ChangeNotifier {
 
   set metadata(OrganismMetadata? metadata) {
     _metadata = metadata;
+    resetAnalysisOptions();
     notifyListeners();
   }
 
@@ -117,7 +118,7 @@ class GeneModel extends ChangeNotifier {
   double? analysisProgress;
 
   /// Options for the analysis
-  AnalysisOptions analysisOptions = AnalysisOptions();
+  AnalysisOptions analysisOptions = const AnalysisOptions();
   StageSelection? _stageSelection;
 
   /// Selected stages
@@ -144,7 +145,7 @@ class GeneModel extends ChangeNotifier {
     }
     analyses = [];
     analysisProgress = null;
-    analysisOptions = AnalysisOptions();
+    resetAnalysisOptions();
     _stageSelection = null;
     _motifs = [];
   }
@@ -218,12 +219,16 @@ class GeneModel extends ChangeNotifier {
   }
 
   void resetAnalysisOptions() {
-    final alignMarkers = sourceGenes?.genes.first.markers.keys.toList();
+    final alignMarkers = metadata?.values.firstOrNull?.markers.keys.toList();
     alignMarkers?.sort();
     if (alignMarkers != null && alignMarkers.isNotEmpty) {
+      if (alignMarkers.contains(analysisOptions.alignMarker)) {
+        // prevents the reset of motif mapping field while the organism is still loading
+        return;
+      }
       analysisOptions = AnalysisOptions(alignMarker: alignMarkers.first, min: -1000, max: 1000, bucketSize: 30);
     } else {
-      analysisOptions = AnalysisOptions();
+      analysisOptions = const AnalysisOptions();
     }
   }
 

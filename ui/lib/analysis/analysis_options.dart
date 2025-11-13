@@ -12,5 +12,5 @@ class AnalysisOptions {
   /// The marker to align the distribution to (usually ATG or TSS)
   final String? alignMarker;
 
-  AnalysisOptions({this.min = 0, this.max = 10000, this.bucketSize = 30, this.alignMarker});
+  const AnalysisOptions({this.min = 0, this.max = 10000, this.bucketSize = 30, this.alignMarker});
 }
