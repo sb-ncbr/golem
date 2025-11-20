@@ -138,20 +138,22 @@ class _SourcePanelState extends State<SourcePanel> {
   }
 
   Map<String, List<Organism>> _groupOrganisms(List<Organism> organisms) {
-    final organismGroups = <String, List<Organism>>{};
+    final model = GeneModel.of(context);
+    final publicGroups = organisms.groupListsBy((o) => o.public);
+    final result = <String, List<Organism>>{'public': publicGroups[true] ?? []};
 
-    for (final organism in organisms) {
-      if (organism.public) {
-        organismGroups.putIfAbsent('public', () => []).add(organism);
-        continue;
-      }
+    if (model.user == null) {
+      return result;
+    }
 
-      for (final group in organism.groups) {
-        organismGroups.putIfAbsent(group.name, () => []).add(organism);
+    for (Organism organism in publicGroups[false] ?? []) {
+      final groups = model.isAdmin ? organism.groups : model.user!.groups;
+      for (final group in groups) {
+        result.putIfAbsent(group.name, () => []).add(organism);
       }
     }
 
-    return organismGroups;
+    return result;
   }
 
   Widget _buildLoadedState(BuildContext context) {
