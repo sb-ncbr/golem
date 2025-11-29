@@ -5,26 +5,39 @@ import 'package:geneweb/analysis/analysis_series.dart';
 class AnalysisSeriesExport {
   final AnalysisSeries series;
 
+  final cellStyle = CellStyle(backgroundColorHex: ExcelColor.fromHexString('FFDDFFDD'), bold: true);
+
   AnalysisSeriesExport(this.series);
 
   /// Exports the series to Excel
   Future<List<int>?> toExcel(String fileName, Function(double progress) progressCallback) async {
     assert(series.geneList.genes.isNotEmpty);
-    var excel = Excel.createExcel();
+    final excel = Excel.createExcel();
     final originalSheets = excel.sheets.keys;
-    final headerCellStyle = CellStyle(backgroundColorHex: ExcelColor.fromHexString('FFDDFFDD'), bold: true);
 
-    // selected_genes sheet
+    await Future.wait([
+      _addSelectedGenesSheet(excel, progressCallback),
+      _addDistributionSheet(excel, progressCallback),
+      _addPositionSheet(excel, progressCallback)
+    ]);
+
+    for (var element in originalSheets) {
+      excel.delete(element);
+    }
+    
+    return excel.save(fileName: fileName);
+  }
+
+  Future<void> _addSelectedGenesSheet(
+      Excel excel, Function(double) progressCallback) async {
     Sheet genesSheet = excel['selected_genes'];
     final stages = series.geneList.genes.first.transcriptionRates.keys.toList();
     // header row
     genesSheet.appendRow([
       TextCellValue('Gene Id'),
-      TextCellValue('Matches'),
       for (final stage in stages) TextCellValue(stage),
     ]);
     // data rows
-    final resultsMap = series.resultsMap;
     for (var i = 0; i < series.geneList.genes.length; i++) {
       if (i % 1000 == 0) {
         progressCallback(i / series.geneList.genes.length * 0.5);
@@ -33,7 +46,6 @@ class AnalysisSeriesExport {
       final gene = series.geneList.genes[i];
       genesSheet.appendRow([
         TextCellValue(gene.geneId),
-        IntCellValue(resultsMap[gene.geneId]?.length ?? 0),
 //        series.result?.where((g) => g.gene.geneId == gene.geneId).length,
         for (final stage in stages)
           gene.transcriptionRates[stage] == null
@@ -41,22 +53,21 @@ class AnalysisSeriesExport {
               : DoubleCellValue(gene.transcriptionRates[stage]!.toDouble()),
       ]);
     }
-    // style the header and first two columns
-    for (int i = 0; i < genesSheet.maxColumns; i++) {
-      genesSheet.cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0)).cellStyle = headerCellStyle;
-    }
-    for (int i = 0; i < genesSheet.maxRows; i++) {
-      if (i % 1000 == 0) {
-        progressCallback(0.5 + i / genesSheet.maxRows * 0.1);
-        await Future.delayed(const Duration(milliseconds: 20));
-      }
-      genesSheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: i)).cellStyle = headerCellStyle;
-      genesSheet.cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: i)).cellStyle = headerCellStyle;
-    }
+    
+    _styleSheetHeader(genesSheet);
+    await Future.wait([
+      _styleSheetColumn(genesSheet, 0, progressCallback),
+      _styleSheetColumn(genesSheet, 1, progressCallback)
+    ]);
+  }
 
-    // distribution sheet
+  Future<void> _addDistributionSheet(
+      Excel excel, Function(double) progressCallback) async {
     Sheet distributionSheet = excel['distribution'];
-    distributionSheet.appendRow([TextCellValue('Interval'), TextCellValue('Genes with motif')]);
+    // header row
+    distributionSheet.appendRow(
+        [TextCellValue('Interval'), TextCellValue('Genes with motif')]);
+    // data rows
     int i = 0;
     final datapoints = series.distribution!.dataPoints!;
     for (final dataPoint in datapoints) {
@@ -69,20 +80,76 @@ class AnalysisSeriesExport {
         for (final gene in dataPoint.genes) TextCellValue(gene),
       ]);
     }
-    for (int i = 0; i < distributionSheet.maxColumns; i++) {
-      distributionSheet.cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0)).cellStyle = headerCellStyle;
-    }
-    for (int i = 0; i < distributionSheet.maxRows; i++) {
-      if (i % 100 == 0) {
-        progressCallback(0.9 + i / distributionSheet.maxRows * 0.1);
+
+    _styleSheetHeader(distributionSheet);
+    await _styleSheetColumn(distributionSheet, 0, progressCallback);
+  } 
+  
+  Future<void> _addPositionSheet(
+      Excel excel, Function(double) progressCallback) async {
+    Sheet positionSheet = excel['position'];
+    // header row
+    positionSheet.appendRow([
+      TextCellValue('Gene Id'),
+      TextCellValue('Number of matches'),
+      TextCellValue('Positions')
+    ]);
+
+    // data rows
+    final resultsMap = series.resultsMap;
+    final alignMarker = series.distribution?.alignMarker ?? '';
+    for (var i = 0; i < series.geneList.genes.length; i++) {
+      if (i % 1000 == 0) {
+        progressCallback(i / series.geneList.genes.length * 0.5);
         await Future.delayed(const Duration(milliseconds: 20));
       }
-      distributionSheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: i)).cellStyle = headerCellStyle;
+
+      final gene = series.geneList.genes[i];
+      final geneResults = resultsMap[gene.geneId];
+      final positions = geneResults
+              ?.map((result) => (
+                    start: result.position - (gene.markers[alignMarker] ?? 0),
+                    length: result.matchedSequence.length
+                  ))
+              .map((span) => '(${span.start}, ${span.start + span.length})')
+              .join(',') ?? '';
+
+      positionSheet.appendRow([
+        TextCellValue(gene.geneId),
+        IntCellValue(geneResults?.length ?? 0),
+        TextCellValue(positions)
+      ]);
     }
 
-    for (var element in originalSheets) {
-      excel.delete(element);
-    }
-    return excel.save(fileName: fileName);
+    _styleSheetHeader(positionSheet);
+    await Future.wait([
+      _styleSheetColumn(positionSheet, 0, progressCallback),
+      _styleSheetColumn(positionSheet, 1, progressCallback)
+    ]);
   }
+
+  void _styleSheetHeader(Sheet sheet) {    
+    for (int i = 0; i < sheet.maxColumns; i++) {
+      _styleSheetCell(sheet, cellStyle, i, 0);
+    }
+  }
+
+  Future<void> _styleSheetColumn(Sheet sheet, int columnIndex, Function(double) progressCallback) async {
+    for (int i = 0; i< sheet.maxRows; i++) {
+      if (i % 1000 == 0) {
+        progressCallback(0.5 + i / sheet.maxRows * 0.1);
+        await Future.delayed(const Duration(milliseconds: 20));
+      }
+      _styleSheetCell(sheet, cellStyle, columnIndex, i);
+    }
+  }
+  
+  void _styleSheetCell(
+      Sheet sheet, CellStyle cellStyle, int columnIndex, int rowIndex) {
+    sheet
+        .cell(CellIndex.indexByColumnRow(
+            columnIndex: columnIndex, rowIndex: rowIndex))
+        .cellStyle = cellStyle;
+  }
+
 }
