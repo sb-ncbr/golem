@@ -14,6 +14,7 @@ import 'package:geneweb/widgets/result_series_list.dart';
 import 'package:provider/provider.dart';
 import 'package:collection/collection.dart';
 import 'package:sanitize_filename/sanitize_filename.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// Widget that builds the results panel
 class AnalysisResultsPanel extends StatefulWidget {
@@ -147,6 +148,12 @@ class _AnalysisResultsPanelState extends State<AnalysisResultsPanel> {
                           TextButton(
                               onPressed: analysisProgress == null ? () => _handleExportAllSeries(context) : null,
                               child: Text('Export ${visibleAnalyses.length} series')),
+                      TextButton(
+                        onPressed: () {
+                          launchUrl(Uri.parse('https://docs.google.com/spreadsheets/d/1bLh3luBKC20eGzZnWfFclEVoLI1yUXnE/edit?pli=1&gid=1975064856#gid=1975064856'));
+                        },
+                        child: const Text('Source data'),
+                      )
                     ],
                   ),
                 TextButton(onPressed: _handleResetAnalyses, child: const Text('Close analysis')),

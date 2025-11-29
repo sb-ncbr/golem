@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:geneweb/analysis/analysis_options.dart';
 import 'package:geneweb/analysis/motif.dart';
@@ -13,6 +16,7 @@ import 'package:geneweb/widgets/stage_panel.dart';
 import 'package:geneweb/widgets/source_panel.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:url_launcher/url_launcher_string.dart';
 
 /// Widget that builds the contents of the Home Screen
 class Home extends StatefulWidget {
@@ -63,6 +67,7 @@ class _HomeState extends State<Home> {
 
     return SingleChildScrollView(
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Loading(),
           Stepper(
@@ -118,12 +123,109 @@ class _HomeState extends State<Home> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          const Divider(),
-          const SizedBox(height: 16),
-          InkWell(
-            onTap: () => launchUrl(Uri.parse('https://elixir-europe.org/')),
-            child: Image.asset('assets/logo_elixir.png', height: 64),
+          const SizedBox(height: 32),
+          const Divider(thickness: .5),
+          const SizedBox(height: 32),
+          Padding(
+            padding: const EdgeInsetsGeometry.symmetric(horizontal: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsetsGeometry.only(bottom: 16),
+                  child: Text('Citing',
+                      style: Theme.of(context).textTheme.headlineLarge),
+                ),
+                Padding(
+                    padding: const EdgeInsetsGeometry.only(bottom: 32),
+                    child: RichText(
+                        text: TextSpan(
+                          children: [
+                            const TextSpan(
+                              text:
+                                  'If you find the GOLEM (Gene regulatOry eLEMents) tool helpful, ',
+                            ),
+                            const TextSpan(
+                              text: 'please cite: ',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            TextSpan(
+                              text:
+                                  'Nevosád L, Klodová B, Rudolf J, Raček T, Přerovská T, Kusová A, Svobodová R, Honys D, Schrumpfová P P (2025). GOLEM: a tool for visualizing the distribution of gene regulatOry eLements within plant promoters with a focus on the male gametophyte. Plant Journal, 121(5), e70037, doi.org/10.1111/tpj.70037',
+                              style: const TextStyle(color: Color(0xffEC6138)),
+                              recognizer: TapGestureRecognizer()
+                                ..onTap = () {
+                                  launchUrl(Uri.parse(
+                                  'https://doi.org/10.1111/tpj.70037'));
+                                },
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+              ],
+            ),
+          ),
+          const Divider(thickness: .5),
+          const SizedBox(height: 32),
+          Padding(
+            padding: const EdgeInsetsGeometry.symmetric(horizontal: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsetsGeometry.only(bottom: 16),
+                  child: Text('Contact',
+                      style: Theme.of(context).textTheme.headlineLarge),
+                ),
+                Padding(
+                    padding: const EdgeInsetsGeometry.only(bottom: 32),
+                    child: RichText(
+                        text: TextSpan(
+                          children: [
+                            const TextSpan(
+                              text:
+                                  'If you are interested in ',
+                            ),
+                            const TextSpan(
+                              text:
+                                  'visualizing your genomes or transcriptomes of interest',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            const TextSpan(
+                              text: ', please feel free to contact us. A ',
+                            ),
+                            const TextSpan(
+                              text: 'private version of the GOLEM tool ',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            const TextSpan(
+                              text: 'is available for non-public visualization of your data. Contact: ',
+                            ),
+                            TextSpan(
+                              text: 'schpetra@sci.muni.cz',
+                              style: const TextStyle(color: Color(0xffEC6138)),
+                              recognizer: TapGestureRecognizer()
+                                ..onTap = () {
+                                  launchUrl(
+                                  Uri.parse('mailto:schpetra@sci.muni.cz'));
+                                },
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+              ],
+            ),
+          ),
+          const Divider(thickness: .5),
+          const SizedBox(height: 32),
+          Align(
+            alignment: Alignment.center,
+            child: InkWell(
+              onTap: () => launchUrl(Uri.parse('https://elixir-europe.org/')),
+              child: Image.asset('assets/logo_elixir.png', height: 64),
+            ),
           ),
           const SizedBox(height: 16),
         ],
