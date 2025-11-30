@@ -8,7 +8,7 @@ from app.api.v1.schemas.response import ResponseList
 from app.config import app_config
 from app.db.repositories.organism import OrganismRepository, OrganismFilters
 from app.db.models.user import User
-from app.services.auth import get_current_user_optional
+from app.services.auth import get_current_user_optional, is_admin
 
 organisms_router = APIRouter(prefix="/organisms", tags=["organisms"])
 
@@ -24,7 +24,9 @@ async def get_organisms(
     """
 
     filters = OrganismFilters(
-        user_id=user.id if user is not None else None, include_public=include_public
+        user_id=user.id if user is not None else None,
+        include_public=include_public,
+        is_admin=is_admin(user)
     )
 
     organisms = await organism_repository.get(filters)
@@ -43,7 +45,10 @@ async def download_organism(
     Download an organism file of a logged-in user or public.
     """
 
-    filters = OrganismFilters(user_id=user.id if user is not None else None)
+    filters = OrganismFilters(
+        user_id=user.id if user is not None else None,
+        is_admin=is_admin(user)
+    )
     organisms = await organism_repository.get(filters)
     organism = next(
         (
@@ -64,7 +69,7 @@ async def download_organism(
 
     organism_groups = [group.name for group in organism.groups]
     user_groups = user.groups if user is not None else []
-    has_group_access = any(
+    has_group_access = is_admin(user) or any(
         group for group in user_groups if group.name in organism_groups
     )
     if not organism.public and not has_group_access:

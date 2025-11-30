@@ -19,9 +19,6 @@ oauth2_scheme = OAuth2PasswordBearerWithCookie(
     tokenUrl="/v1/auth/login", auto_error=False
 )
 
-ADMINISTRATORS_GROUP = "administrators"
-
-
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """
     Verify that the plain password matches the hashed password.
@@ -214,9 +211,7 @@ def is_admin(user: User) -> bool:
     Returns:
         bool: True if the user is an admin, False otherwise.
     """
-    return user is not None and any(
-        group.name == ADMINISTRATORS_GROUP for group in user.groups
-    )
+    return user is not None and user.is_admin()
 
 
 def decode_token(token: str) -> dict:

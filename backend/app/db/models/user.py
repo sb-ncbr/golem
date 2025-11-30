@@ -6,6 +6,7 @@ from app.db.models.group import Group, UserGroup
 from app.db.models.motif import Motif
 from app.db.models.stage_preference import UserStagePreference
 
+ADMINISTRATORS_GROUP = "administrators"
 
 class User(SQLModel, table=True):
     """A user of the GOLEM application."""
@@ -36,3 +37,6 @@ class User(SQLModel, table=True):
         """
 
         return f"{self.username}"
+
+    def is_admin(self) -> bool:
+        return any(group.name == ADMINISTRATORS_GROUP for group in self.groups)

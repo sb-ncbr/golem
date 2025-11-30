@@ -6,6 +6,8 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.db import db
 from app.db.models.motif import Motif
+from app.db.models.user import User
+from app.db.repositories.user import UserRepository
 from app.schemas.base import BaseSchema
 
 
@@ -15,6 +17,7 @@ class MotifFilters(BaseSchema):
     """
 
     user_id: uuid.UUID | None = None
+    is_admin: bool = False
 
 
 class MotifRepository:
@@ -53,7 +56,7 @@ class MotifRepository:
         filters = filters or MotifFilters()
 
         statement = select(Motif).where(
-            or_(Motif.user_id == filters.user_id, Motif.public == True)
+            or_(filters.is_admin, Motif.user_id == filters.user_id, Motif.public == True)
         )
         motifs = await self.session.execute(statement)
 

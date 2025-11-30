@@ -1,11 +1,10 @@
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.config import app_config
-from app.db.models.user import User
+from app.db.models.user import User, ADMINISTRATORS_GROUP
 from app.db.models.group import Group
 
 import app.services.auth as auth
-from app.services.auth import ADMINISTRATORS_GROUP
 
 USER_PRESETS = [
     User(

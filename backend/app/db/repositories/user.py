@@ -1,10 +1,10 @@
+
 from fastapi import Depends
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.db import db
 from app.db.models.user import User
-
 
 class UserRepository:
     """

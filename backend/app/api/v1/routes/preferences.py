@@ -22,7 +22,9 @@ async def preferences(
     organism_repository: OrganismRepository = Depends(OrganismRepository),
 ) -> ResponseSingle[PreferenceResponse]:
     try:
-        user_organisms = await organism_repository.get(OrganismFilters(user_id=user.id))
+        user_organisms = await organism_repository.get(
+            OrganismFilters(user_id=user.id, is_admin=user.is_admin())
+        )
 
         if not any(organism.id == data.organism_id for organism in user_organisms):
             raise HTTPException(status_code=404, detail="Organism not found")

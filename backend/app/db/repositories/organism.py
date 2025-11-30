@@ -5,8 +5,9 @@ from sqlmodel import select, or_
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.db import db
-from app.db.models.group import OrganismGroup, Group, UserGroup
+from app.db.models.group import OrganismGroup
 from app.db.models.organism import Organism
+from app.db.models.user import User
 from app.schemas.base import BaseSchema
 
 
@@ -16,6 +17,7 @@ class OrganismFilters(BaseSchema):
     """
 
     user_id: uuid.UUID | None = None
+    is_admin: bool = False
     include_public: bool = True
 
 
@@ -42,17 +44,13 @@ class OrganismRepository:
         filters = filters or OrganismFilters()
         group_ids = []
 
-        if filters.user_id is not None:
-            user_groups = (
-                (
-                    await self.session.execute(
-                        select(UserGroup).where(UserGroup.user_id == filters.user_id)
-                    )
-                )
-                .scalars()
-                .all()
-            )
-            group_ids = [group.group_id for group in user_groups]
+        if filters.user_id is not None and not filters.is_admin:
+            # we don't care about users groups if they have administrative privileges
+            statement = select(User).where(User.id == filters.user_id)
+            user = await self.session.execute(statement)
+            groups = user.scalars().first().groups
+
+            group_ids = [group.id for group in groups]
 
         statement = (
             select(Organism)
@@ -60,8 +58,10 @@ class OrganismRepository:
             .join(OrganismGroup, OrganismGroup.organism_id == Organism.id, isouter=True)
             .where(
                 or_(
+                    filters.is_admin,
                     OrganismGroup.group_id.in_(group_ids),
                     filters.include_public and Organism.public == True,
+
                 )
             )
         )

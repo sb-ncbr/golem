@@ -7,7 +7,7 @@ from app.api.v1.schemas.response import ResponseList, ResponseSingle
 from app.db.models.motif import Motif, MotifDefinition
 from app.db.repositories.motif import MotifRepository, MotifFilters
 from app.db.models.user import User
-from app.services.auth import get_current_user, get_current_user_optional
+from app.services.auth import get_current_user, get_current_user_optional, is_admin
 
 motifs_router = APIRouter(prefix="/motifs", tags=["motifs"])
 
@@ -17,7 +17,10 @@ async def get_motifs(
     motif_repository: MotifRepository = Depends(MotifRepository),
     user: User | None = Depends(get_current_user_optional),
 ) -> ResponseList[MotifResponse]:
-    filters = MotifFilters(user_id=user.id if user else None)
+    filters = MotifFilters(
+        user_id=user.id if user else None,
+        is_admin=is_admin(user)
+    )
     motifs = await motif_repository.get(filters)
 
     data = [
@@ -67,7 +70,7 @@ async def delete_motif(
     motif = await motif_repository.get_by_id(id)
     not_found_exception = HTTPException(status_code=404, detail="Motif not found")
 
-    if not motif or motif.user_id != user.id:
+    if not motif or (not user.is_admin() and motif.user_id != user.id):
         raise not_found_exception
 
     await motif_repository.delete(id)
