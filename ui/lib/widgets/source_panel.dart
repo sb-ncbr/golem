@@ -147,7 +147,12 @@ class _SourcePanelState extends State<SourcePanel> {
     }
 
     for (Organism organism in publicGroups[false] ?? []) {
-      final groups = model.isAdmin ? organism.groups : model.user!.groups;
+      final groups = model.isAdmin
+          ? organism.groups
+          // intersection of user and organism groups
+          : organism.groups
+              .where((g) => model.user!.groups.any((ug) => ug.id == g.id));
+
       for (final group in groups) {
         result.putIfAbsent(group.name, () => []).add(organism);
       }
