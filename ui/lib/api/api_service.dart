@@ -99,7 +99,7 @@ class ApiService {
       final response = await dio.get(
         path,
         options:
-            Options(responseType: ResponseType.plain, responseDecoder: null),
+            Options(responseType: ResponseType.bytes, responseDecoder: null),
       );
 
       return ApiResponse.success(response.data);

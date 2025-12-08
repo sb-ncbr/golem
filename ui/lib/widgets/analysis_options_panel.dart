@@ -74,8 +74,8 @@ class _AnalysisOptionsPanelState extends State<AnalysisOptionsPanel> {
   @override
   Widget build(BuildContext context) {
     final isSignedIn = context.select<GeneModel, bool>((model) => model.isSignedIn);
-    final markers =
-        context.select<GeneModel, List<String>>((model) => model.metadata?.values.firstOrNull?.markers.keys.toList() ?? []);
+    final markers = context.select<GeneModel, List<String>>((model) => model.alignMarkers);
+        
     markers.sort();
 
     return Align(

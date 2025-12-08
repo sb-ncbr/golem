@@ -1,8 +1,13 @@
+import 'dart:convert';
+import 'dart:js_interop' as js;
+
 import 'package:faabul_color_picker/faabul_color_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:geneweb/analysis/analysis_series.dart';
 import 'package:geneweb/analysis/motif.dart';
+import 'package:geneweb/api/api_service.dart';
+import 'package:geneweb/api/organism.dart';
 import 'package:geneweb/genes/gene_list.dart';
 import 'package:geneweb/genes/gene_model.dart';
 import 'package:geneweb/genes/stage_selection.dart';
@@ -15,6 +20,7 @@ import 'package:provider/provider.dart';
 import 'package:collection/collection.dart';
 import 'package:sanitize_filename/sanitize_filename.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:web/web.dart' as web;
 
 /// Widget that builds the results panel
 class AnalysisResultsPanel extends StatefulWidget {
@@ -39,11 +45,16 @@ class _AnalysisResultsPanelState extends State<AnalysisResultsPanel> {
   String? _selectedAnalysisName;
 
   double? _exportProgress;
+  double? _inputExportProgress;
 
-  late final _verticalAxisMinController = TextEditingController()..addListener(_axisListener);
-  late final _verticalAxisMaxController = TextEditingController()..addListener(_axisListener);
-  late final _horizontalAxisMinController = TextEditingController()..addListener(_axisListener);
-  late final _horizontalAxisMaxController = TextEditingController()..addListener(_axisListener);
+  late final _verticalAxisMinController = TextEditingController()
+    ..addListener(_axisListener);
+  late final _verticalAxisMaxController = TextEditingController()
+    ..addListener(_axisListener);
+  late final _horizontalAxisMinController = TextEditingController()
+    ..addListener(_axisListener);
+  late final _horizontalAxisMaxController = TextEditingController()
+    ..addListener(_axisListener);
 
   @override
   void dispose() {
@@ -56,17 +67,27 @@ class _AnalysisResultsPanelState extends State<AnalysisResultsPanel> {
 
   @override
   Widget build(BuildContext context) {
-    final sourceGenes = context.select<GeneModel, GeneList?>((model) => model.sourceGenes);
-    final motifs = context.select<GeneModel, List<Motif>>((model) => model.motifs);
-    final filter = context.select<GeneModel, StageSelection?>((model) => model.stageSelection);
-    final analyses = context.select<GeneModel, List<AnalysisSeries>>((model) => model.analyses);
-    final visibleAnalyses =
-        context.select<GeneModel, List<AnalysisSeries>>((model) => model.analyses.where((a) => a.visible).toList());
-    final analysisProgress = context.select<GeneModel, double?>((model) => model.analysisProgress);
-    final analysisCancelled = context.select<GeneModel, bool>((model) => model.analysisCancelled);
-    final expectedResults = context.select<GeneModel, int>((model) => model.expectedSeriesCount);
-    final analysis = context.select<GeneModel, AnalysisSeries?>(
-        (model) => model.analyses.firstWhereOrNull((a) => a.name == _selectedAnalysisName));
+    final sourceGenes =
+        context.select<GeneModel, GeneList?>((model) => model.sourceGenes);
+    final metadata = 
+        context.select<GeneModel, OrganismMetadata?>((model) => model.metadata);
+    final motifs =
+        context.select<GeneModel, List<Motif>>((model) => model.motifs);
+    final filter = context
+        .select<GeneModel, StageSelection?>((model) => model.stageSelection);
+    final analyses = context
+        .select<GeneModel, List<AnalysisSeries>>((model) => model.analyses);
+    final visibleAnalyses = context.select<GeneModel, List<AnalysisSeries>>(
+        (model) => model.analyses.where((a) => a.visible).toList());
+    final analysisProgress =
+        context.select<GeneModel, double?>((model) => model.analysisProgress);
+    final analysisCancelled =
+        context.select<GeneModel, bool>((model) => model.analysisCancelled);
+    final expectedResults =
+        context.select<GeneModel, int>((model) => model.expectedSeriesCount);
+    final analysis = context.select<GeneModel, AnalysisSeries?>((model) => model
+        .analyses
+        .firstWhereOrNull((a) => a.name == _selectedAnalysisName));
     final canAnalyzeErrors = [
       if (sourceGenes == null) 'no source genes selected',
       if (motifs.isEmpty) 'no motifs selected',
@@ -81,19 +102,23 @@ class _AnalysisResultsPanelState extends State<AnalysisResultsPanel> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (canAnalyzeErrors.isNotEmpty) ...[
-            Text('Analysis cannot be run: ${canAnalyzeErrors.join(', ')}', style: TextStyle(color: colorScheme.error)),
+            Text('Analysis cannot be run: ${canAnalyzeErrors.join(', ')}',
+                style: TextStyle(color: colorScheme.error)),
             const SizedBox(height: 16),
           ],
           if (analysisProgress != null) ...[
             const SizedBox(height: 16),
             Column(
               children: [
-                Text('Analysis in progress… (${(analysisProgress * 100).round()}% complete)',
+                Text(
+                    'Analysis in progress… (${(analysisProgress * 100).round()}% complete)',
                     style: textTheme.bodySmall),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Expanded(child: LinearProgressIndicator(value: analysisProgress)),
+                    Expanded(
+                        child:
+                            LinearProgressIndicator(value: analysisProgress)),
                     IconButton(
                       onPressed: analysisCancelled ? null : _handleStopAnalysis,
                       tooltip: 'Stop analysis',
@@ -107,7 +132,8 @@ class _AnalysisResultsPanelState extends State<AnalysisResultsPanel> {
           ],
           if (analyses.isEmpty && analysisProgress == null) ...[
             const SizedBox(height: 16),
-            ElevatedButton(onPressed: _handleAnalyze, child: const Text('Run Analysis')),
+            ElevatedButton(
+                onPressed: _handleAnalyze, child: const Text('Run Analysis')),
             const SizedBox(height: 16),
             if (expectedResults > 20) ...[
               Text(
@@ -132,9 +158,12 @@ class _AnalysisResultsPanelState extends State<AnalysisResultsPanel> {
                         _ExportIndicator(exportProgress: _exportProgress)
                       else
                         TextButton(
-                            onPressed: () => _handleExportSingleSeries(analysis),
+                            onPressed: () =>
+                                _handleExportSingleSeries(analysis),
                             child: const Text('Export this series')),
-                      TextButton(onPressed: () => _handleAnalysisSelected(null), child: const Text('Deselect')),
+                      TextButton(
+                          onPressed: () => _handleAnalysisSelected(null),
+                          child: const Text('Deselect')),
                     ],
                   )
                 else
@@ -146,17 +175,72 @@ class _AnalysisResultsPanelState extends State<AnalysisResultsPanel> {
                           _ExportIndicator(exportProgress: _exportProgress)
                         else
                           TextButton(
-                              onPressed: analysisProgress == null ? () => _handleExportAllSeries(context) : null,
-                              child: Text('Export ${visibleAnalyses.length} series')),
+                              onPressed: analysisProgress == null
+                                  ? () => _handleExportAllSeries(context)
+                                  : null,
+                              child: Text(
+                                  'Export ${visibleAnalyses.length} series')),
                       TextButton(
                         onPressed: () {
-                          launchUrl(Uri.parse('https://docs.google.com/spreadsheets/d/1bLh3luBKC20eGzZnWfFclEVoLI1yUXnE/edit?pli=1&gid=1975064856#gid=1975064856'));
+                          // TODO: move url somewhere else
+                          launchUrl(Uri.parse(
+                              'https://docs.google.com/spreadsheets/d/1bLh3luBKC20eGzZnWfFclEVoLI1yUXnE/edit?pli=1&gid=1975064856#gid=1975064856'));
                         },
                         child: const Text('Source data'),
-                      )
-                    ],
-                  ),
-                TextButton(onPressed: _handleResetAnalyses, child: const Text('Close analysis')),
+                      ),
+                      if (_inputExportProgress != null)
+                        _ExportIndicator(exportProgress: _inputExportProgress)
+                      else
+                        if (sourceGenes != null && metadata != null)
+                          TextButton(
+                            statesController:
+                                WidgetStatesController({WidgetState.disabled}),
+                            onPressed: () async {
+                              setState(() {
+                                _inputExportProgress = .2;
+                              });
+
+                              final organism = sourceGenes.organism!;
+                              final exportResponse = await ApiService.instance
+                                  .download('/organisms/export/${organism.id}');
+
+                              if (!exportResponse.success) {
+                                _scaffoldMessenger.showSnackBar(const SnackBar(
+                                    content:
+                                        Text('Unable to download source data.'),
+                                    backgroundColor: Colors.red));
+                                return;
+                              }
+
+                              setState(() {
+                                _inputExportProgress = .6;
+                              });
+
+                              final finalBlob = web.Blob(
+                                  [exportResponse.data]
+                                      as js.JSArray<web.BlobPart>,
+                                  web.BlobPropertyBag(type: 'application/zip'));
+                              final url = web.URL.createObjectURL(finalBlob);
+
+                              final anchor = web.HTMLAnchorElement()
+                                ..href = url
+                                ..download = 'source_data.zip';
+                              web.document.body?.append(anchor);
+                              anchor.click();
+                              anchor.remove();
+
+                              web.URL.revokeObjectURL(url);
+                              setState(() {
+                                _inputExportProgress = null;
+                              });
+                            },
+                            child: const Text('Download input data'),
+                          )
+                      ],
+                    ),
+                TextButton(
+                    onPressed: _handleResetAnalyses,
+                    child: const Text('Close analysis')),
               ],
             ),
           if (analyses.isNotEmpty) ...[
@@ -169,14 +253,18 @@ class _AnalysisResultsPanelState extends State<AnalysisResultsPanel> {
   }
 
   Widget _buildResults(BuildContext context) {
-    final analyses = context.select<GeneModel, List<AnalysisSeries>>((model) => model.analyses);
+    final analyses = context
+        .select<GeneModel, List<AnalysisSeries>>((model) => model.analyses);
     assert(analyses.isNotEmpty);
-    final analysis = context.select<GeneModel, AnalysisSeries?>(
-        (model) => model.analyses.firstWhereOrNull((a) => a.name == _selectedAnalysisName));
+    final analysis = context.select<GeneModel, AnalysisSeries?>((model) => model
+        .analyses
+        .firstWhereOrNull((a) => a.name == _selectedAnalysisName));
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(width: 400, child: ResultSeriesList(onSelected: _handleAnalysisSelected)),
+        SizedBox(
+            width: 400,
+            child: ResultSeriesList(onSelected: _handleAnalysisSelected)),
         const VerticalDivider(width: 16),
         Expanded(
           child: Column(
@@ -193,7 +281,8 @@ class _AnalysisResultsPanelState extends State<AnalysisResultsPanel> {
                   child: Row(
                     children: [
                       Expanded(child: _buildAnalysisRowSettings(analysis)),
-                      Expanded(child: DrillDownView(name: _selectedAnalysisName)),
+                      Expanded(
+                          child: DrillDownView(name: _selectedAnalysisName)),
                     ],
                   ),
                 ),
@@ -230,7 +319,8 @@ class _AnalysisResultsPanelState extends State<AnalysisResultsPanel> {
                   child: Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: TextField(
-                      decoration: const InputDecoration(labelText: 'Vertical axis min'),
+                      decoration:
+                          const InputDecoration(labelText: 'Vertical axis min'),
                       controller: _verticalAxisMinController,
                       keyboardType: TextInputType.number,
                     ),
@@ -240,7 +330,8 @@ class _AnalysisResultsPanelState extends State<AnalysisResultsPanel> {
                   child: Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: TextField(
-                      decoration: const InputDecoration(labelText: 'Vertical axis max'),
+                      decoration:
+                          const InputDecoration(labelText: 'Vertical axis max'),
                       controller: _verticalAxisMaxController,
                       keyboardType: TextInputType.number,
                     ),
@@ -250,7 +341,8 @@ class _AnalysisResultsPanelState extends State<AnalysisResultsPanel> {
                   child: Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: TextField(
-                      decoration: const InputDecoration(labelText: 'Horizontal axis min'),
+                      decoration: const InputDecoration(
+                          labelText: 'Horizontal axis min'),
                       controller: _horizontalAxisMinController,
                       keyboardType: TextInputType.number,
                     ),
@@ -260,7 +352,8 @@ class _AnalysisResultsPanelState extends State<AnalysisResultsPanel> {
                   child: Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: TextField(
-                      decoration: const InputDecoration(labelText: 'Horizontal axis max'),
+                      decoration: const InputDecoration(
+                          labelText: 'Horizontal axis max'),
                       controller: _horizontalAxisMaxController,
                       keyboardType: TextInputType.number,
                     ),
@@ -313,21 +406,30 @@ class _AnalysisResultsPanelState extends State<AnalysisResultsPanel> {
   void _handleAnalyze() async {
     final result = await _model.analyze();
     if (result) {
-      _scaffoldMessenger.showSnackBar(const SnackBar(content: Text('Analysis complete')));
+      _scaffoldMessenger
+          .showSnackBar(const SnackBar(content: Text('Analysis complete')));
     } else {
-      _scaffoldMessenger.showSnackBar(const SnackBar(backgroundColor: Colors.red, content: Text('Analysis cancelled')));
+      _scaffoldMessenger.showSnackBar(const SnackBar(
+          backgroundColor: Colors.red, content: Text('Analysis cancelled')));
     }
   }
 
   Future<void> _handleExportAllSeries(BuildContext context) async {
     setState(() => _exportProgress = 0);
-    final output = DistributionsExport(_model.analyses.where((a) => a.visible).map((e) => e.distribution!).toList());
+    final output = DistributionsExport(_model.analyses
+        .where((a) => a.visible)
+        .map((e) => e.distribution!)
+        .toList());
     final stageName = _model.stageSelection!.selectedStages.length == 1
         ? _model.stageSelection!.selectedStages.first
         : '${_model.stageSelection!.selectedStages.length} stages';
-    final motifName = _model.motifs.length == 1 ? _model.motifs.first : '${_model.motifs.length} motifs';
-    final filename = 'distributions_${_model.name}_${motifName}_$stageName.xlsx';
-    final data = await output.toExcel(filename, (progress) => setState(() => _exportProgress = progress));
+    final motifName = _model.motifs.length == 1
+        ? _model.motifs.first
+        : '${_model.motifs.length} motifs';
+    final filename =
+        'distributions_${_model.name}_${motifName}_$stageName.xlsx';
+    final data = await output.toExcel(
+        filename, (progress) => setState(() => _exportProgress = progress));
     if (data == null) return;
     debugPrint('Saving $filename (${data.length} bytes)');
     setState(() => _exportProgress = null);
@@ -339,14 +441,18 @@ class _AnalysisResultsPanelState extends State<AnalysisResultsPanel> {
 
   void _axisListener() {
     setState(() {
-      _verticalAxisMin =
-          _verticalAxisMinController.text.isEmpty ? null : double.tryParse(_verticalAxisMinController.text);
-      _verticalAxisMax =
-          _verticalAxisMaxController.text.isEmpty ? null : double.tryParse(_verticalAxisMaxController.text);
-      _horizontalAxisMin =
-          _horizontalAxisMinController.text.isEmpty ? null : double.tryParse(_horizontalAxisMinController.text);
-      _horizontalAxisMax =
-          _horizontalAxisMaxController.text.isEmpty ? null : double.tryParse(_horizontalAxisMaxController.text);
+      _verticalAxisMin = _verticalAxisMinController.text.isEmpty
+          ? null
+          : double.tryParse(_verticalAxisMinController.text);
+      _verticalAxisMax = _verticalAxisMaxController.text.isEmpty
+          ? null
+          : double.tryParse(_verticalAxisMaxController.text);
+      _horizontalAxisMin = _horizontalAxisMinController.text.isEmpty
+          ? null
+          : double.tryParse(_horizontalAxisMinController.text);
+      _horizontalAxisMax = _horizontalAxisMaxController.text.isEmpty
+          ? null
+          : double.tryParse(_horizontalAxisMaxController.text);
     });
   }
 
@@ -393,7 +499,8 @@ class _AnalysisResultsPanelState extends State<AnalysisResultsPanel> {
 
   Future<void> _handleSetColor(AnalysisSeries analysis) async {
     final model = GeneModel.of(context);
-    final color = await showColorPickerDialog(context: context, selected: analysis.color);
+    final color =
+        await showColorPickerDialog(context: context, selected: analysis.color);
     _updateAnalysis(model, analysis.copyWith(color: color));
   }
 
@@ -412,7 +519,8 @@ class _AnalysisResultsPanelState extends State<AnalysisResultsPanel> {
     final output = AnalysisSeriesExport(analysis);
     final filename = sanitizeFilename('${analysis.name}.xlsx');
 
-    final data = await output.toExcel(filename, (progress) => setState(() => _exportProgress = progress));
+    final data = await output.toExcel(
+        filename, (progress) => setState(() => _exportProgress = progress));
     if (data == null) return;
     debugPrint('Saving $filename (${data.length} bytes)');
     setState(() => _exportProgress = null);

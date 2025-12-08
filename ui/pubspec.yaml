@@ -32,6 +32,7 @@ dependencies:
   url_launcher: ^6.2.1
   dio: ^5.9.0
   dio_web_adapter: ^2.1.1
+  web: ^1.1.1
 
 dev_dependencies:
   flutter_test:

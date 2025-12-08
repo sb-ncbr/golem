@@ -1,7 +1,7 @@
 import uuid
 
 from fastapi import Depends
-from sqlmodel import select, or_
+from sqlmodel import and_, select, or_
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.db import db
@@ -61,7 +61,6 @@ class OrganismRepository:
                     filters.is_admin,
                     OrganismGroup.group_id.in_(group_ids),
                     filters.include_public and Organism.public == True,
-
                 )
             )
         )
@@ -73,6 +72,11 @@ class OrganismRepository:
         statement = select(Organism).where(Organism.filename == filename)
         organism = await self.session.execute(statement)
 
+        return organism.scalars().first()
+
+    async def get_by_id(self, organism_id: uuid.UUID) -> Organism | None:
+        statement = select(Organism).where(Organism.id == organism_id)
+        organism = await self.session.execute(statement)
         return organism.scalars().first()
 
     async def create(self, organism: Organism) -> Organism:

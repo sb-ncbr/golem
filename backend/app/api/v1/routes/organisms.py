@@ -1,4 +1,7 @@
+import gzip
 import pathlib
+import uuid
+import zipfile
 
 from fastapi import APIRouter, Depends, HTTPException
 from starlette.responses import FileResponse
@@ -6,6 +9,7 @@ from starlette.responses import FileResponse
 from app.api.v1.schemas.organism import OrganismResponse
 from app.api.v1.schemas.response import ResponseList
 from app.config import app_config
+from app.db.models.organism import Organism
 from app.db.repositories.organism import OrganismRepository, OrganismFilters
 from app.db.models.user import User
 from app.services.auth import get_current_user_optional, is_admin
@@ -67,11 +71,7 @@ async def download_organism(
     if not organism.public and user is None:
         raise not_found_exception
 
-    organism_groups = [group.name for group in organism.groups]
-    user_groups = user.groups if user is not None else []
-    has_group_access = is_admin(user) or any(
-        group for group in user_groups if group.name in organism_groups
-    )
+    has_group_access = _has_group_access(organism, user)
     if not organism.public and not has_group_access:
         raise not_found_exception
 
@@ -86,3 +86,50 @@ async def download_organism(
         media_type="application/gzip",
         headers={"Content-Encoding": "gzip"},
     )
+
+@organisms_router.get("/export/{organism_id}")
+async def export_organism(
+        organism_id: uuid.UUID,
+        organism_repository: OrganismRepository = Depends(),
+        user: User | None = Depends(get_current_user_optional),
+) -> FileResponse:
+    organism = await organism_repository.get_by_id(organism_id)
+    not_found_exception = HTTPException(status_code=404, detail="Organism not found")
+
+    if organism is None:
+        raise not_found_exception
+
+    if not organism.public and user is None:
+        raise not_found_exception
+
+    has_group_access = _has_group_access(organism, user)
+    if not organism.public and not has_group_access:
+        raise not_found_exception
+
+    sequences_path = pathlib.Path(app_config.data_dir) / f"{organism.sequences_filename}.gz"
+    metadata_path = pathlib.Path(app_config.data_dir) / f"{organism.metadata_filename}.gz"
+
+    zip_path = "input_data.zip"
+    with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as result_zip:
+        with gzip.open(sequences_path, "rb") as sequences_file:
+            decompressed = sequences_file.read()
+            result_zip.writestr(sequences_path.stem, decompressed)
+
+        with gzip.open(metadata_path, "rb") as metadata_file:
+            decompressed = metadata_file.read()
+            result_zip.writestr(metadata_path.stem, decompressed)
+
+        return FileResponse(
+            zip_path,
+            media_type="application/zip",
+            headers={"Content-Encoding": "zip"},
+        )
+
+def _has_group_access(organism: Organism, user: User | None) -> bool:
+    organism_groups = [group.name for group in organism.groups]
+    user_groups = user.groups if user is not None else []
+    has_group_access = any(
+        group for group in user_groups if group.name in organism_groups
+    )
+
+    return has_group_access

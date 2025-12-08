@@ -128,6 +128,11 @@ class GeneModel extends ChangeNotifier {
   /// All motifs
   List<Motif> get motifs => _motifs;
 
+  List<String> get alignMarkers =>
+      metadata?.values.firstOrNull?.markers.keys.toList() ??
+      sourceGenes?.genes.first.markers.keys.toList() ??
+      [];
+
   /// Number of series the analysis will produce
   int get expectedSeriesCount =>
       motifs.length *
@@ -219,14 +224,14 @@ class GeneModel extends ChangeNotifier {
   }
 
   void resetAnalysisOptions() {
-    final alignMarkers = metadata?.values.firstOrNull?.markers.keys.toList();
-    alignMarkers?.sort();
-    if (alignMarkers != null && alignMarkers.isNotEmpty) {
-      if (alignMarkers.contains(analysisOptions.alignMarker)) {
+    final markers = alignMarkers;
+    markers.sort();
+    if (markers.isNotEmpty) {
+      if (markers.contains(analysisOptions.alignMarker)) {
         // prevents the reset of motif mapping field while the organism is still loading
         return;
       }
-      analysisOptions = AnalysisOptions(alignMarker: alignMarkers.first, min: -1000, max: 1000, bucketSize: 30);
+      analysisOptions = AnalysisOptions(alignMarker: markers.first, min: -1000, max: 1000, bucketSize: 30);
     } else {
       analysisOptions = const AnalysisOptions();
     }

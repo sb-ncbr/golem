@@ -369,7 +369,7 @@ class _SourcePanelState extends State<SourcePanel> {
         throw Exception(response.message);
       }
 
-      return response.data;
+      return String.fromCharCodes(response.data);
     } catch (_) {
       model.loading = LoadingState(isLoading: false);
       rethrow;

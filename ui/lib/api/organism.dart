@@ -133,6 +133,7 @@ Future<OrganismMetadata?> fetchMetadata(
     return null;
   }
 
-  return (json.decode(response.data) as Map<String, dynamic>)
+  return (json.decode(String.fromCharCodes(response.data))
+          as Map<String, dynamic>)
       .map((key, value) => MapEntry(key, SequenceMetadata.fromJson(value)));
 }
