@@ -9,8 +9,14 @@ class AnalysisSeriesExport {
 
   AnalysisSeriesExport(this.series);
 
-  /// Exports the series to Excel
-  Future<List<int>?> toExcel(String fileName, Function(double progress) progressCallback) async {
+  /// Exports the series to Excel and saves it to user
+  Future<List<int>?> toExcelAndSave(String fileName, {Function(double progress)? progressCallback}) async {
+    final excel = await toExcel(fileName, progressCallback: progressCallback);
+    return excel.save(fileName: fileName);
+  }
+
+    /// Exports the series to Excel
+    Future<Excel> toExcel(String fileName, { Function(double progress)? progressCallback }) async {
     assert(series.geneList.genes.isNotEmpty);
     final excel = Excel.createExcel();
     final originalSheets = excel.sheets.keys;
@@ -25,11 +31,11 @@ class AnalysisSeriesExport {
       excel.delete(element);
     }
     
-    return excel.save(fileName: fileName);
+    return excel;
   }
 
   Future<void> _addSelectedGenesSheet(
-      Excel excel, Function(double) progressCallback) async {
+      Excel excel, Function(double)? progressCallback) async {
     Sheet genesSheet = excel['selected_genes'];
     final stages = series.geneList.genes.first.transcriptionRates.keys.toList();
     // header row
@@ -40,7 +46,7 @@ class AnalysisSeriesExport {
     // data rows
     for (var i = 0; i < series.geneList.genes.length; i++) {
       if (i % 1000 == 0) {
-        progressCallback(i / series.geneList.genes.length * 0.5);
+        progressCallback?.call(i / series.geneList.genes.length * 0.5);
         await Future.delayed(const Duration(milliseconds: 20));
       }
       final gene = series.geneList.genes[i];
@@ -62,7 +68,7 @@ class AnalysisSeriesExport {
   }
 
   Future<void> _addDistributionSheet(
-      Excel excel, Function(double) progressCallback) async {
+      Excel excel, Function(double)? progressCallback) async {
     Sheet distributionSheet = excel['distribution'];
     // header row
     distributionSheet.appendRow(
@@ -72,7 +78,7 @@ class AnalysisSeriesExport {
     final datapoints = series.distribution!.dataPoints!;
     for (final dataPoint in datapoints) {
       if (i++ % 100 == 0) {
-        progressCallback(0.6 + i / datapoints.length * 0.3);
+        progressCallback?.call(0.6 + i / datapoints.length * 0.3);
         await Future.delayed(const Duration(milliseconds: 20));
       }
       distributionSheet.appendRow([
@@ -86,7 +92,7 @@ class AnalysisSeriesExport {
   } 
   
   Future<void> _addPositionSheet(
-      Excel excel, Function(double) progressCallback) async {
+      Excel excel, Function(double)? progressCallback) async {
     Sheet positionSheet = excel['position'];
     // header row
     positionSheet.appendRow([
@@ -100,7 +106,7 @@ class AnalysisSeriesExport {
     final alignMarker = series.distribution?.alignMarker ?? '';
     for (var i = 0; i < series.geneList.genes.length; i++) {
       if (i % 1000 == 0) {
-        progressCallback(i / series.geneList.genes.length * 0.5);
+        progressCallback?.call(i / series.geneList.genes.length * 0.5);
         await Future.delayed(const Duration(milliseconds: 20));
       }
 
@@ -134,10 +140,10 @@ class AnalysisSeriesExport {
     }
   }
 
-  Future<void> _styleSheetColumn(Sheet sheet, int columnIndex, Function(double) progressCallback) async {
+  Future<void> _styleSheetColumn(Sheet sheet, int columnIndex, Function(double)? progressCallback) async {
     for (int i = 0; i< sheet.maxRows; i++) {
       if (i % 1000 == 0) {
-        progressCallback(0.5 + i / sheet.maxRows * 0.1);
+        progressCallback?.call(0.5 + i / sheet.maxRows * 0.1);
         await Future.delayed(const Duration(milliseconds: 20));
       }
       _styleSheetCell(sheet, cellStyle, columnIndex, i);

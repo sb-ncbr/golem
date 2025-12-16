@@ -1,6 +1,6 @@
-import 'dart:convert';
 import 'dart:js_interop' as js;
 
+import 'package:archive/archive_io.dart';
 import 'package:faabul_color_picker/faabul_color_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -13,6 +13,7 @@ import 'package:geneweb/genes/gene_model.dart';
 import 'package:geneweb/genes/stage_selection.dart';
 import 'package:geneweb/output/distributions_export.dart';
 import 'package:geneweb/output/analysis_series_export.dart';
+import 'package:geneweb/utilities/download.dart';
 import 'package:geneweb/widgets/distribution_view.dart';
 import 'package:geneweb/widgets/drill_down_view.dart';
 import 'package:geneweb/widgets/result_series_list.dart';
@@ -216,20 +217,7 @@ class _AnalysisResultsPanelState extends State<AnalysisResultsPanel> {
                                 _inputExportProgress = .6;
                               });
 
-                              final finalBlob = web.Blob(
-                                  [exportResponse.data]
-                                      as js.JSArray<web.BlobPart>,
-                                  web.BlobPropertyBag(type: 'application/zip'));
-                              final url = web.URL.createObjectURL(finalBlob);
-
-                              final anchor = web.HTMLAnchorElement()
-                                ..href = url
-                                ..download = 'source_data.zip';
-                              web.document.body?.append(anchor);
-                              anchor.click();
-                              anchor.remove();
-
-                              web.URL.revokeObjectURL(url);
+                              downloadFile(exportResponse.data, 'application/zip', 'source_data.zip');
                               setState(() {
                                 _inputExportProgress = null;
                               });
@@ -414,27 +402,6 @@ class _AnalysisResultsPanelState extends State<AnalysisResultsPanel> {
     }
   }
 
-  Future<void> _handleExportAllSeries(BuildContext context) async {
-    setState(() => _exportProgress = 0);
-    final output = DistributionsExport(_model.analyses
-        .where((a) => a.visible)
-        .map((e) => e.distribution!)
-        .toList());
-    final stageName = _model.stageSelection!.selectedStages.length == 1
-        ? _model.stageSelection!.selectedStages.first
-        : '${_model.stageSelection!.selectedStages.length} stages';
-    final motifName = _model.motifs.length == 1
-        ? _model.motifs.first
-        : '${_model.motifs.length} motifs';
-    final filename =
-        'distributions_${_model.name}_${motifName}_$stageName.xlsx';
-    final data = await output.toExcel(
-        filename, (progress) => setState(() => _exportProgress = progress));
-    if (data == null) return;
-    debugPrint('Saving $filename (${data.length} bytes)');
-    setState(() => _exportProgress = null);
-  }
-
   void _setAxis(bool? value) {
     setState(() => _customAxis = value!);
   }
@@ -519,10 +486,55 @@ class _AnalysisResultsPanelState extends State<AnalysisResultsPanel> {
     final output = AnalysisSeriesExport(analysis);
     final filename = sanitizeFilename('${analysis.name}.xlsx');
 
-    final data = await output.toExcel(
-        filename, (progress) => setState(() => _exportProgress = progress));
+    final data = await output.toExcelAndSave(
+        filename, progressCallback: (progress) => setState(() => _exportProgress = progress));
     if (data == null) return;
     debugPrint('Saving $filename (${data.length} bytes)');
+    setState(() => _exportProgress = null);
+  }
+
+  Future<void> _handleExportAllSeries(BuildContext context) async {
+    setState(() => _exportProgress = 0);
+
+    final analyses =
+        _model.analyses.where((analysis) => analysis.visible).toList();
+    final totalTasks = analyses.length + 1; // all series + distribution
+    final zipEncoder = ZipEncoder();
+    final archive = Archive();
+
+    for (var i = 0; i < analyses.length; i++) {
+      final analysis = analyses[i];
+      final export = AnalysisSeriesExport(analysis);
+      final filename = sanitizeFilename('${analysis.name}.xlsx');
+      final data = await export.toExcel(filename);
+
+      setState(() => _exportProgress = (i + 1) / totalTasks);
+
+      final encodedData = data.encode();
+      if (encodedData != null) {
+        archive.addFile(ArchiveFile(filename, encodedData.length, encodedData));
+      }
+    }
+    
+    final distributionOutput =
+        DistributionsExport(analyses.map((e) => e.distribution!).toList());
+        final stageName = _model.stageSelection!.selectedStages.length == 1
+        ? _model.stageSelection!.selectedStages.first
+        : '${_model.stageSelection!.selectedStages.length} stages';
+    final motifName = _model.motifs.length == 1
+        ? _model.motifs.first
+        : '${_model.motifs.length} motifs';
+    final filename =
+        'distributions_${_model.name}_${motifName}_$stageName.xlsx';
+    final distributionExcel = await distributionOutput.toExcel(filename);
+    
+    final encodedDistribution = distributionExcel.encode();
+    if (encodedDistribution != null) {
+      archive.addFile(ArchiveFile(filename, encodedDistribution.length, encodedDistribution));
+    }
+
+    downloadFile(zipEncoder.encode(archive), 'application/zip', 'series.zip');
+
     setState(() => _exportProgress = null);
   }
 

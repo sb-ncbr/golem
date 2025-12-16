@@ -7,8 +7,14 @@ class DistributionsExport {
 
   DistributionsExport(this.distributions);
 
+  /// Exports the distributions to Excel and saves it to user
+  Future<List<int>?> toExcelAndSave(String fileName, {Function(double progress)? progressCallback}) async {
+    final excel = await toExcel(fileName, progressCallback: progressCallback);
+    return excel.save(fileName: fileName);
+  }
+
   /// Exports the distributions to Excel
-  Future<List<int>?> toExcel(String fileName, Function(double progress) progressCallback) async {
+  Future<Excel> toExcel(String fileName, {Function(double progress)? progressCallback}) async {
     assert(distributions.isNotEmpty);
     var excel = Excel.createExcel();
     final originalSheets = excel.sheets.keys;
@@ -29,7 +35,7 @@ class DistributionsExport {
     // data rows
     for (var i = 0; i < first.length; i++) {
       if (i % 1000 == 0) {
-        progressCallback(i / first.length * 0.5);
+        progressCallback?.call(i / first.length * 0.5);
         await Future.delayed(const Duration(milliseconds: 20));
       }
       final dataPoint = first[i];
@@ -62,7 +68,7 @@ class DistributionsExport {
     // data rows
     for (var i = 0; i < first.length; i++) {
       if (i % 1000 == 0) {
-        progressCallback(0.5 + i / first.length * 0.5);
+        progressCallback?.call(0.5 + i / first.length * 0.5);
         await Future.delayed(const Duration(milliseconds: 20));
       }
       final dataPoint = first[i];
@@ -85,6 +91,6 @@ class DistributionsExport {
     for (var element in originalSheets) {
       excel.delete(element);
     }
-    return excel.save(fileName: fileName);
+    return excel;
   }
 }
