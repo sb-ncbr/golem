@@ -129,7 +129,7 @@ class GeneModel extends ChangeNotifier {
   List<Motif> get motifs => _motifs;
 
   List<String> get alignMarkers =>
-      metadata?.values.firstOrNull?.markers.keys.toList() ??
+      metadata?.genes.values.firstOrNull?.markers.keys.toList() ??
       sourceGenes?.genes.first.markers.keys.toList() ??
       [];
 
@@ -138,6 +138,12 @@ class GeneModel extends ChangeNotifier {
       motifs.length *
       (stageSelection?.selectedStages.length ?? 0) *
       (stageSelection?.percentiles?.length ?? 0);
+
+  List<String>? get stageKeys => (metadata?.stages ?? {}).keys.isNotEmpty
+      // new metadata json format
+      ? metadata!.stages.keys.toList()
+      // old format or no stage metadata provided -> take transcription rates keys from the first gene
+      : metadata?.genes.values.firstOrNull?.transcriptionRates.keys.toList();
 
   GeneModel(this.deploymentFlavor);
 

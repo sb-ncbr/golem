@@ -12,6 +12,7 @@ import 'package:geneweb/utilities/message.dart';
 import 'package:geneweb/utilities/stages.dart';
 import 'package:provider/provider.dart';
 import 'package:truncate/truncate.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// Widget that is shown just below the panel headline
 class StageSubtitle extends StatelessWidget {
@@ -126,11 +127,7 @@ class _StagePanelState extends State<StagePanel> {
             const SizedBox(height: 16),
             Consumer<GeneModel>(builder: (context, model, child) {
               final sourceGenes = model.sourceGenes;
-              final stageKeys = model
-                      .metadata?.values.first.transcriptionRates.keys
-                      .toList() ??
-                  sourceGenes?.stageKeys ??
-                  [];
+              final stageKeys = model.stageKeys ?? sourceGenes?.stageKeys ?? [];
               final stageGroups = _groupStages(stageKeys);
 
               for (final stage in stageKeys) {
@@ -213,13 +210,13 @@ class _StagePanelState extends State<StagePanel> {
                         keyboardType: TextInputType.number,
                         onChanged: (value) {
                           setState(() =>
-                              _count = (int.tryParse(_countController.text) ?? 0).clamp(0, sourceGenes?.genes.length ?? metadata!.length));
+                              _count = (int.tryParse(_countController.text) ?? 0).clamp(0, sourceGenes?.genes.length ?? metadata!.genes.length));
                           _handleChanged();
                         },
                         validator: (value) {
                           final parsed = int.tryParse(_countController.text);
-                          if (parsed == null || parsed < 0 || parsed > (sourceGenes?.genes.length ?? metadata!.length)) {
-                            return 'Enter a number between 0 and ${sourceGenes?.genes.length ?? metadata!.length}';
+                          if (parsed == null || parsed < 0 || parsed > (sourceGenes?.genes.length ?? metadata!.genes.length)) {
+                            return 'Enter a number between 0 and ${sourceGenes?.genes.length ?? metadata!.genes.length}';
                           }
                           return null;
                         },
@@ -331,16 +328,23 @@ class _StagePanelState extends State<StagePanel> {
 
 class _StageCard extends StatelessWidget {
   final String name;
+  final StageMetadata? metadata;
   final Color? color;
   final bool isSelected;
   final bool showPicker;
   final Function(bool value) onToggle;
-  const _StageCard({required this.name, required this.color, required this.isSelected, required this.onToggle, this.showPicker = true});
+  const _StageCard(
+      {required this.name,
+      required this.color,
+      required this.isSelected,
+      required this.onToggle,
+      this.showPicker = true,
+      this.metadata});
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final backgroundColor = isSelected ? (color ?? Colors.grey) : (color ?? Colors.grey).withOpacity(0.4);
+    final backgroundColor = isSelected ? (color ?? Colors.grey) : (color ?? Colors.grey).withValues(alpha: 0.4);
     final textColor = backgroundColor.computeLuminance() > 0.5 ? Colors.black : Colors.white;
     return SizedBox(
       width: 160,
@@ -355,11 +359,30 @@ class _StageCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  truncate(name.replaceAll('_', ' '), 60),
-                  overflow: TextOverflow.fade,
-                  style: textTheme.titleSmall?.copyWith(color: textColor),
-                  maxLines: 3,
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      truncate(name.replaceAll('_', ' '), 60),
+                      overflow: TextOverflow.fade,
+                      style: textTheme.titleSmall?.copyWith(color: textColor),
+                      maxLines: 3,
+                    ),
+                    if (metadata != null && metadata!.srr.isNotEmpty)
+                      TextButton(
+                        style: const ButtonStyle(padding: WidgetStatePropertyAll(EdgeInsetsGeometry.all(0))),
+                          onPressed: () => metadata!.url.isNotEmpty
+                              ? launchUrl(Uri.parse(metadata!.url))
+                              : null,
+                          child: Text(
+                            truncate(metadata!.srr, 60),
+                            overflow: TextOverflow.fade,
+                            style: textTheme.bodySmall?.copyWith(
+                                color: textColor.withValues(alpha: .8)),
+                            textAlign: TextAlign.start,
+                            maxLines: 3,
+                          )),
+                  ],
                 ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -423,6 +446,11 @@ class _StageGroup extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final sourceGenes = context.select<GeneModel, GeneList?>((model) => model.sourceGenes);
     final filter = context.select<GeneModel, StageSelection>((model) => model.stageSelection ?? StageSelection(selectedStages: []));
+    final metadata = context.select<GeneModel, Map<String, StageMetadata>>(((model) {
+      final metadata = model.metadata?.stages ?? {};
+      final stageKeys = metadata.keys.where((k) => stageGroup.contains(k));
+      return {for (var sKey in stageKeys) sKey: metadata[sKey]!};
+    }));
     return Column(
       spacing: 4,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -441,6 +469,7 @@ class _StageGroup extends StatelessWidget {
                 name: stage,
                 color: sourceGenes?.colors[stage],
                 isSelected: filter.selectedStages.contains(stage),
+                metadata: metadata[stage],
                 onToggle: (value) => onStageToggle(stage, value),
               ),
           ],

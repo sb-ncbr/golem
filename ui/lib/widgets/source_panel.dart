@@ -343,9 +343,8 @@ class _SourcePanelState extends State<SourcePanel> {
 
     model.metadata = metadata;
 
-    final stages = metadata?.values.firstOrNull?.transcriptionRates.keys ?? [];
-    organism.stages.addAll(stages);
-
+    organism.stages.addAll(model.stageKeys ?? []);
+    
     widget.onShouldClose();
     setState(() => _loadingMessage = null);
     setState(() => _progress = null);

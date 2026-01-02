@@ -100,6 +100,55 @@ Future<List<Organism>> fetchOrganisms({
       .toList();
 }
 
+class OrganismMetadata {
+  final Map<String, StageMetadata> stages;
+  final Map<String, SequenceMetadata> genes;
+
+  const OrganismMetadata({required this.stages, required this.genes});
+
+  factory OrganismMetadata.fromJson(Map<String, dynamic> json) {
+    return switch (json) {
+      // new format which includes metadata for stages (srr and urls)
+      {
+        'stages': Map s,
+        'genes': Map g,
+      } =>
+        OrganismMetadata(
+            stages: Map.fromEntries(s.entries.map((stage) =>
+                MapEntry(stage.key, StageMetadata.fromJson(stage.value)))),
+            genes: Map.fromEntries(g.entries.map((gene) =>
+                MapEntry(gene.key, SequenceMetadata.fromJson(gene.value))))),
+      // old format which only includes genes
+      Map<String, dynamic> data => OrganismMetadata(
+          stages: {},
+          genes: Map.fromEntries(data.entries.map((gene) =>
+              MapEntry(gene.key, SequenceMetadata.fromJson(gene.value))))),
+    };
+  }
+}
+
+class StageMetadata {
+  final String srr;
+  final String url;
+
+  const StageMetadata({required this.srr, required this.url});
+
+  Map<String, dynamic> toJson() => {
+    'srr': srr,
+    'url': url
+  };
+
+  factory StageMetadata.fromJson(Map<String, dynamic> json) {
+    return switch (json) {
+      {
+        'srr': String srr,
+        'url': String url
+      } => StageMetadata(srr: srr, url: url),
+      _ => throw const FormatException('Failed to load stage metadata.')
+    };
+  }
+}
+
 class SequenceMetadata {
   final Map<String, int> markers;
   final Map<String, double> transcriptionRates;
@@ -121,8 +170,6 @@ class SequenceMetadata {
   }
 }
 
-typedef OrganismMetadata = Map<String, SequenceMetadata>;
-
 Future<OrganismMetadata?> fetchMetadata(
     {required Organism organism, Function(String)? onError}) async {
   final response = await ApiService.instance
@@ -133,7 +180,6 @@ Future<OrganismMetadata?> fetchMetadata(
     return null;
   }
 
-  return (json.decode(String.fromCharCodes(response.data))
-          as Map<String, dynamic>)
-      .map((key, value) => MapEntry(key, SequenceMetadata.fromJson(value)));
+  final jsonString = json.decode(String.fromCharCodes(response.data));
+  return OrganismMetadata.fromJson(jsonString);
 }

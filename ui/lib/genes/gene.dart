@@ -85,7 +85,7 @@ class Gene {
     }
 
     final sequence = data.join();
-    final metadata = organismMetadata[geneId];
+    final metadata = organismMetadata.genes[geneId];
     if (metadata == null) {
       throw Exception('Metadata not found for gene: $geneId');
     }
