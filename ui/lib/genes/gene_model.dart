@@ -98,6 +98,7 @@ class GeneModel extends ChangeNotifier {
   bool get isAdmin =>
       isSignedIn &&
       _user!.groups
+              // TODO: probably shouldn't be hardcoded
               .firstWhereOrNull((group) => group.name == 'administrators') !=
           null;
 
@@ -133,6 +134,14 @@ class GeneModel extends ChangeNotifier {
       sourceGenes?.genes.first.markers.keys.toList() ??
       [];
 
+  /// Whether to match only when ALL motifs are found in a gene.
+  bool _matchWhenAll = false;
+  bool get matchWhenAll => motifs.length > 1 && _matchWhenAll;
+  set matchWhenAll(bool value) {
+    _matchWhenAll = value;
+    notifyListeners();
+  }
+
   /// Number of series the analysis will produce
   int get expectedSeriesCount =>
       motifs.length *
@@ -159,6 +168,7 @@ class GeneModel extends ChangeNotifier {
     resetAnalysisOptions();
     _stageSelection = null;
     _motifs = [];
+    _matchWhenAll = false;
   }
 
   void cancelAnalysis() {
@@ -403,10 +413,14 @@ class GeneModel extends ChangeNotifier {
     assert(motifs.isNotEmpty);
     final totalIterations = stageSelection!.selectedStages.length * motifs.length * stageSelection!.percentiles!.length;
     assert(totalIterations > 0);
+    
     int iterations = 0;
     analysisProgress = 0.0;
     _analysisCancelled = false;
     notifyListeners();
+    
+    final Set<String>? intersectingGeneIds = matchWhenAll ? _identifyIntersectingGenes(sourceGenes!, motifs) : null;
+
     for (final motif in motifs) {
       for (final key in stageSelection!.selectedStages) {
         await Future.delayed(const Duration(milliseconds: 50)); // Allow UI to refresh on web
@@ -447,6 +461,7 @@ class GeneModel extends ChangeNotifier {
             'alignMarker': analysisOptions.alignMarker,
             'color': tintedColor.value,
             'stroke': stroke,
+            'allowedGeneIds': intersectingGeneIds
           });
           analyses.add(analysis);
           iterations++;
@@ -460,6 +475,7 @@ class GeneModel extends ChangeNotifier {
     return true;
   }
 
+    
   Color _randomColorOf(String text) {
     var hash = 0;
     for (var i = 0; i < text.length; i++) {
@@ -471,6 +487,39 @@ class GeneModel extends ChangeNotifier {
     final green = ((finalHash & 0xFF));
     final color = Color.fromRGBO(red, green, blue, 1);
     return color;
+  }
+
+  Set<String> _identifyIntersectingGenes(GeneList genesList, List<Motif> motifs) {
+    List<Gene> candidates = genesList.genes;
+
+    for (final motif in motifs) {
+      if (candidates.isEmpty) {
+        break;
+      }
+      final patterns = [
+        ...motif.regExp.values,
+        ...motif.reverseComplementRegExp.values
+      ];
+
+      final List<Gene> survivors = [];
+
+      for (final gene in candidates) {
+        bool matched = false;
+        for (final pattern in patterns) {
+          if (pattern.hasMatch(gene.data)) {
+            matched = true;
+            break;
+          }
+        }
+        if (matched) {
+          survivors.add(gene);
+        }
+      }
+
+      candidates = survivors;
+    }
+    
+    return candidates.map((c) => c.geneId).toSet();
   }
 }
 
@@ -485,6 +534,7 @@ Future<AnalysisSeries> runAnalysis(Map<String, dynamic> params) async {
   final alignMarker = params['alignMarker'] as String?;
   final color = Color(params['color'] as int);
   final stroke = params['stroke'] as int?;
+  final allowedGeneIds = params['allowedGeneIds'] as Set<String>?;
   final analysis = AnalysisSeries.run(
     geneList: list,
     noOverlaps: true,
@@ -496,6 +546,7 @@ Future<AnalysisSeries> runAnalysis(Map<String, dynamic> params) async {
     name: name,
     color: color,
     stroke: stroke,
+    allowedGeneIds: allowedGeneIds,
   );
   return analysis;
 }

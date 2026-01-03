@@ -18,6 +18,7 @@ class MotifSubtitle extends StatelessWidget {
   Widget build(BuildContext context) {
     final motifs = context.select<GeneModel, List<Motif>>((model) => model.motifs);
     final expectedResults = context.select<GeneModel, int>((model) => model.expectedSeriesCount);
+    final matchWhenAll = context.select<GeneModel, bool>((model) => model.matchWhenAll);
     if (expectedResults > 60 && motifs.length > 5) {
       return Text('Analysis would result in $expectedResults series, reduce the number of selected motifs');
     }
@@ -25,7 +26,7 @@ class MotifSubtitle extends StatelessWidget {
         ? const Text('Choose motifs to analyze or enter a custom motif')
         : motifs.length == 1
             ? Text(truncate('${motifs.first.name} (${motifs.first.definitions.join(', ')})', 100))
-            : Text('${motifs.length} motifs');
+            : Text('${motifs.length} motifs, ${matchWhenAll ? 'matching when ALL motifs are found' : 'matching separately'}');
   }
 }
 
@@ -78,6 +79,7 @@ class _MotifPanelState extends State<MotifPanel> {
     final metadata = context.select<GeneModel, OrganismMetadata?>((model) => model.metadata);
     if (sourceGenes == null && metadata == null) return const Center(child: Text('Load source data first'));
     final motifs = context.select<GeneModel, List<Motif>>((model) => model.motifs);
+    final matchWhenAll = context.select<GeneModel, bool>((model) => model.matchWhenAll);
     final customMotifs = motifs.where((m) => m.isCustom).toList();
     final textTheme = Theme.of(context).textTheme;
     final motifGroups = _groupMotifs(_motifs);
@@ -148,7 +150,20 @@ class _MotifPanelState extends State<MotifPanel> {
                         )
                       ])
               ],
-            )
+            ),
+            if (motifs.length > 1) const SizedBox(height: 16.0),
+            if (motifs.length > 1)
+              Row(spacing: 4, children: [
+                Switch(
+                    value: matchWhenAll,
+                    onChanged: (value) {
+                      _model.matchWhenAll = value;
+                    }),
+                Text(matchWhenAll
+                    ? "Match genes containing ALL motifs."
+                    : "Match each motif separately."),
+                const Text('(PREVIEW)', style: TextStyle(fontWeight: FontWeight.bold))
+              ])
           ],
         ),
       ),

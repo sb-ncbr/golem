@@ -94,11 +94,23 @@ class AnalysisSeries {
 
     /// Whether the series is visible
     bool visible = true,
+
+    /// Whitelist of genes to include (not provided => use all)
+    Set<String>? allowedGeneIds
   }) {
     /// find the matches
     List<AnalysisResult> results = [];
-    for (var gene in geneList.genes) {
-      results.addAll(_findMatches(gene, motif, noOverlaps));
+    Iterable<Gene> genesToAnalyze = switch (allowedGeneIds) {
+      null => geneList.genes,
+      _ => geneList.genes.where((g) => allowedGeneIds.contains(g.geneId))
+    };
+    final definitions = {
+      ...motif.regExp,
+      ...motif.reverseComplementRegExp,
+    };
+
+    for (var gene in genesToAnalyze) {
+      results.addAll(_findMatches(gene, motif, definitions, noOverlaps));
     }
 
     /// calculate the distribution
@@ -109,7 +121,7 @@ class AnalysisSeries {
       alignMarker: alignMarker,
       name: name,
       color: color,
-    )..run(results, geneList.genes.length);
+    )..run(results, genesToAnalyze.length);
 
     return AnalysisSeries._(
       geneList: geneList,
@@ -135,12 +147,9 @@ class AnalysisSeries {
     return map;
   }
 
-  static List<AnalysisResult> _findMatches(Gene gene, Motif motif, bool noOverlaps) {
+  static List<AnalysisResult> _findMatches(Gene gene, Motif motif,
+      Map<String, RegExp> definitions, bool noOverlaps) {
     List<AnalysisResult> result = [];
-    final definitions = {
-      ...motif.regExp,
-      ...motif.reverseComplementRegExp,
-    };
     for (final definition in definitions.keys) {
       final regexp = definitions[definition]!;
       final matches = regexp.allMatches(gene.data).map((match) {
