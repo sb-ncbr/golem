@@ -64,6 +64,7 @@ class _HomeState extends State<Home> {
     final motifs = context.select<GeneModel, List<Motif>>((model) => model.motifs);
     final filter = context.select<GeneModel, StageSelection?>((model) => model.stageSelection);
     final expectedResults = context.select<GeneModel, int>((model) => model.expectedSeriesCount);
+    final colorScheme = Theme.of(context).colorScheme;
 
     return SingleChildScrollView(
       child: Column(
@@ -152,7 +153,7 @@ class _HomeState extends State<Home> {
                             TextSpan(
                               text:
                                   'Nevosád L, Klodová B, Rudolf J, Raček T, Přerovská T, Kusová A, Svobodová R, Honys D, Schrumpfová P P (2025). GOLEM: a tool for visualizing the distribution of gene regulatOry eLements within plant promoters with a focus on the male gametophyte. Plant Journal, 121(5), e70037, doi.org/10.1111/tpj.70037',
-                              style: const TextStyle(color: Color(0xffEC6138)),
+                              style: TextStyle(color: colorScheme.primary),
                               recognizer: TapGestureRecognizer()
                                 ..onTap = () {
                                   launchUrl(Uri.parse(
@@ -184,27 +185,11 @@ class _HomeState extends State<Home> {
                         text: TextSpan(
                           children: [
                             const TextSpan(
-                              text:
-                                  'If you are interested in ',
-                            ),
-                            const TextSpan(
-                              text:
-                                  'visualizing your genomes or transcriptomes of interest',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            const TextSpan(
-                              text: ', please feel free to contact us. A ',
-                            ),
-                            const TextSpan(
-                              text: 'private version of the GOLEM tool ',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            const TextSpan(
-                              text: 'is available for non-public visualization of your data. Contact: ',
+                              text: 'Users with genomes not yet available in GOLEM or with private transcriptome datasets (e.g., tissue-specific, stress-affected, or mutant samples) can visualize motifs using a private-access version of the software. Contact: '
                             ),
                             TextSpan(
                               text: 'schpetra@sci.muni.cz',
-                              style: const TextStyle(color: Color(0xffEC6138)),
+                              style: TextStyle(color: colorScheme.primary),
                               recognizer: TapGestureRecognizer()
                                 ..onTap = () {
                                   launchUrl(

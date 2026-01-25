@@ -14,3 +14,7 @@ class PreferenceResponse(BaseSchema):
     organism_id: uuid.UUID
     stage_name: str
     color: Color
+
+class DefaultPreferenceResponse(BaseSchema):
+    stage_name: str
+    color: Color

@@ -36,7 +36,17 @@ class HomeScreen extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 2),
-                    Text('Gene regulatory elements', style: Theme.of(context).textTheme.titleMedium),
+                    Row(
+                      spacing: 4,
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.ideographic,
+                      children: [
+                        Text('Gene regulatory elements',
+                            style: Theme.of(context).textTheme.titleMedium),
+                        Text('(update 02/2026)',
+                            style: Theme.of(context).textTheme.labelSmall),
+                      ],
+                    )
                   ],
                 ),
               ),
@@ -92,7 +102,6 @@ class HomeScreen extends StatelessWidget {
             )
           ],
         ),
-        backgroundColor: public ? null : const Color(0xffEC6138),
         actions: deploymentFlavor != null
             ? null
             : <Widget>[

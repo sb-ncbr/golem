@@ -121,7 +121,7 @@ class AnalysisSeries {
       alignMarker: alignMarker,
       name: name,
       color: color,
-    )..run(results, genesToAnalyze.length);
+    )..run(results, geneList.genes.length);
 
     return AnalysisSeries._(
       geneList: geneList,

@@ -44,7 +44,7 @@ class DistributionsExport {
         IntCellValue(dataPoint.min),
         ...dataPoints.map((dp) => IntCellValue(dp[i].count)),
         TextCellValue(''),
-        ...dataPoints.map((dp) => DoubleCellValue(dp[i].percent)),
+        ...dataPoints.map((dp) => DoubleCellValue(dp[i].percent * 100)),
       ]);
     }
     for (int i = 0; i < motifSheet.maxColumns; i++) {
@@ -77,7 +77,7 @@ class DistributionsExport {
         IntCellValue(dataPoint.min),
         ...dataPoints.map((dp) => IntCellValue(dp[i].genesCount)),
         TextCellValue(''),
-        ...dataPoints.map((dp) => DoubleCellValue(dp[i].genesPercent)),
+        ...dataPoints.map((dp) => DoubleCellValue(dp[i].genesPercent * 100)),
       ]);
     }
     for (int i = 0; i < genesSheet.maxColumns; i++) {

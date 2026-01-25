@@ -151,19 +151,28 @@ class _MotifPanelState extends State<MotifPanel> {
                       ])
               ],
             ),
-            if (motifs.length > 1) const SizedBox(height: 16.0),
-            if (motifs.length > 1)
-              Row(spacing: 4, children: [
-                Switch(
-                    value: matchWhenAll,
-                    onChanged: (value) {
-                      _model.matchWhenAll = value;
-                    }),
-                Text(matchWhenAll
-                    ? "Match genes containing ALL motifs."
-                    : "Match each motif separately."),
-                const Text('(PREVIEW)', style: TextStyle(fontWeight: FontWeight.bold))
-              ])
+            const SizedBox(height: 16.0),
+            Row(spacing: 4, children: [
+              Switch(
+                  value: matchWhenAll,
+                  onChanged: (value) {
+                    _model.matchWhenAll = value;
+                  }),
+              Column(
+                  spacing: 2,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(spacing: 4, children: [
+                      Text(
+                          'Search only in genes containing all selected motifs'),
+                      Text('(PREVIEW)',
+                          style: TextStyle(fontWeight: FontWeight.bold))
+                    ]),
+                    Text(
+                        '(By default, motifs are searched independently. This option restricts the analysis to genes that contain all selected motifs simultaneously.)',
+                        style: textTheme.labelSmall)
+                  ])
+            ])
           ],
         ),
       ),

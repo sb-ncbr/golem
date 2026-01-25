@@ -1,7 +1,11 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.params import Depends
 
-from app.api.v1.schemas.preference import PreferenceUpdateRequest, PreferenceResponse
+from app.api.v1.schemas.preference import (
+    PreferenceUpdateRequest,
+    PreferenceResponse,
+    DefaultPreferenceResponse,
+)
 from app.api.v1.schemas.response import ResponseSingle, ResponseList
 from app.db.models.stage_preference import UserStagePreference
 from app.db.models.user import User
@@ -72,10 +76,11 @@ async def preferences(
 @preferences_router.get("/default")
 async def default_preferences(
     preferences_repository: PreferenceRepository = Depends(PreferenceRepository),
-) -> ResponseList[PreferenceResponse]:
+) -> ResponseList[DefaultPreferenceResponse]:
     preferences = await preferences_repository.get_default()
-    return ResponseList[PreferenceResponse](
+    print(preferences)
+    return ResponseList[DefaultPreferenceResponse](
         data=[
-            PreferenceResponse.model_validate(preference) for preference in preferences
+            DefaultPreferenceResponse.model_validate(preference) for preference in preferences
         ]
     )
