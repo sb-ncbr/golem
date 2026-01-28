@@ -1,0 +1,50 @@
+name: GOLEM Deploy
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22}}
+          command_timeout: 60m
+          script: |
+            DEPLOY_TARGET="${{ github.event.inputs.components }}"
+            BRANCH_NAME="${{ github.ref_name }}"
+
+            echo "Deployment target: [$DEPLOY_TARGET] from branch [$BRANCH_NAME]"
+
+            echo "Navigating to the deployment directory ..."
+            cd /home/ubuntu/geneweb/deployment
+
+            echo "Pulling latest changes ..."
+            sudo git checkout $BRANCH_NAME
+            sudo git fetch origin
+            sudo git reset --hard origin/$BRANCH_NAME
+
+            if $[ $? -ne 0 ]; then echo "Git pull failed"; exit 1; fi;
+
+            echo "Building images ..."
+            sudo docker compose build --no-cache
+
+            if $[ $? -ne 0 ]; then echo "Failed to build images"; exit 1; fi;
+
+            echo "Starting new containers ..."
+            sudo docker compose up -d --remove-orphans
+
+            echo "Listing containers ..."
+            sudo docker compose ps
+
+            echo "Cleaning up old images ..."
+            sudo docker image prune -f
