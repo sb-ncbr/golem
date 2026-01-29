@@ -304,10 +304,15 @@ class GeneModel extends ChangeNotifier {
       ...defaultPreferences, // then preferences of the organism
       ...randomPreferences, // if no preferences were found, use random
     ].distinctBy((pref) => pref.stageName);
-    final colors = {
-      for (StagePreference preference in preferences)
-        preference.stageName: HexColor.fromHex(preference.color)
-    };
+    
+    final colors = <String, Color>{};
+    for (StagePreference preference in preferences) {
+      try {
+        colors[preference.stageName] = HexColor.fromHex(preference.color);
+      } catch (e) {
+        debugPrint('Unable to convert the color ${preference.color} ${preference.stageName} to hex');
+      }
+    }
 
     sourceGenes = GeneList.fromList(
         genes: genes, errors: errors, organism: organism, colors: colors);
