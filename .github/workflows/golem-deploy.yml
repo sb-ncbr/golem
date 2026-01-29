@@ -7,6 +7,7 @@ jobs:
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
+    environment: Production
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -20,10 +21,9 @@ jobs:
           port: ${{ secrets.SSH_PORT || 22}}
           command_timeout: 60m
           script: |
-            DEPLOY_TARGET="${{ github.event.inputs.components }}"
             BRANCH_NAME="${{ github.ref_name }}"
 
-            echo "Deployment target: [$DEPLOY_TARGET] from branch [$BRANCH_NAME]"
+            echo "Deploying from branch [$BRANCH_NAME]"
 
             echo "Navigating to the deployment directory ..."
             cd /home/ubuntu/geneweb/deployment
@@ -33,15 +33,17 @@ jobs:
             sudo git fetch origin
             sudo git reset --hard origin/$BRANCH_NAME
 
-            if $[ $? -ne 0 ]; then echo "Git pull failed"; exit 1; fi;
+            if [ $? -ne 0 ]; then echo "Git pull failed"; exit 1; fi;
 
             echo "Building images ..."
             sudo docker compose build --no-cache
 
-            if $[ $? -ne 0 ]; then echo "Failed to build images"; exit 1; fi;
+            if [ $? -ne 0 ]; then echo "Failed to build images"; exit 1; fi;
 
             echo "Starting new containers ..."
             sudo docker compose up -d --remove-orphans
+
+            if [ $? -ne 0 ]; then echo "Failed to start containers"; exit 1; fi;
 
             echo "Listing containers ..."
             sudo docker compose ps
