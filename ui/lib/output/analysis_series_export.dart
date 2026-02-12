@@ -61,10 +61,7 @@ class AnalysisSeriesExport {
     }
     
     _styleSheetHeader(genesSheet);
-    await Future.wait([
-      _styleSheetColumn(genesSheet, 0, progressCallback),
-      _styleSheetColumn(genesSheet, 1, progressCallback)
-    ]);
+    await _styleSheetColumn(genesSheet, 0, progressCallback);
   }
 
   Future<void> _addDistributionSheet(

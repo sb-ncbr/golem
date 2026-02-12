@@ -238,7 +238,10 @@ class _StagePanelState extends State<StagePanel> {
               if (_selection == FilterSelection.percentile) ...[
                 const SizedBox(height: 16),
                 Text(
-                    'Genes included in the analysis from each stage are genes whose transcripts will represent ${_formatPercentiles(_percentiles ?? [])} of all transcripts transcribed from the total number of protein-coding genes in each selected stage.',
+                    'By default, the genes included in the analysis from each stage are those genes whose transcripts represent 90% of all transcripts transcribed from the total number of protein-coding genes in the selected stage.',
+                    style: textTheme.labelMedium),
+                Text(
+                    'Multiple percentiles (e.g., 90%, 80%, 70%) can be visualized simultaneously by entering the values separated by commas (e.g., 90,80,70).',
                     style: textTheme.labelMedium),
               ],
             ],
