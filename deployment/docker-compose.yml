@@ -41,9 +41,10 @@ services:
     ports:
       - "8000:8000"
     environment:
-      GOLEM_DATABASE_URL: "postgresql+asyncpg://postgres:postgres@db:5432/postgres"
+      GOLEM_DATABASE_URL: "postgresql+asyncpg://postgres:${GOLEM_DATABASE_PASSWORD}@db:5432/postgres"
       GOLEM_DATA_DIR: "/data"
       GOLEM_ACCESS_TOKEN_EXPIRE_MINUTES: 30
+      GOLEM_SECRET_KEY: ${GOLEM_SECRET_KEY}
     volumes:
       - /home/ubuntu/geneweb-data:/data
     depends_on:

@@ -21,9 +21,15 @@ jobs:
           port: ${{ secrets.SSH_PORT || 22}}
           command_timeout: 60m
           script: |
+            set -e
+            
             BRANCH_NAME="${{ github.ref_name }}"
 
             echo "Deploying from branch [$BRANCH_NAME]"
+
+            echo "Setting up environment variables ..."
+            export GOLEM_SECRET_KEY=${{ secrets.GOLEM_SECRET_KEY }}
+            export GOLEM_DATABASE_PASSWORD=${{ secrets.GOLEM_DATABASE_PASSWORD }}
 
             echo "Navigating to the deployment directory ..."
             cd /home/ubuntu/geneweb/deployment
@@ -36,12 +42,12 @@ jobs:
             if [ $? -ne 0 ]; then echo "Git pull failed"; exit 1; fi;
 
             echo "Building images ..."
-            sudo docker compose build --no-cache
+            sudo -E docker compose build --no-cache
 
             if [ $? -ne 0 ]; then echo "Failed to build images"; exit 1; fi;
 
             echo "Starting new containers ..."
-            sudo docker compose up -d --remove-orphans
+            sudo -E docker compose up -d --remove-orphans
 
             if [ $? -ne 0 ]; then echo "Failed to start containers"; exit 1; fi;
 

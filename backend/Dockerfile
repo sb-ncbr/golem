@@ -13,4 +13,4 @@ RUN pip install -r requirements.txt
 
 RUN chmod +x /geneweb/entrypoint.sh
 
-CMD ["/geneweb/entrypoint.sh"]
+ENTRYPOINT ["/geneweb/entrypoint.sh"]
