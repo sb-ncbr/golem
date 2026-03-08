@@ -18,7 +18,7 @@ from app.api.v1.routes.auth import auth_router
 from app.api.v1.routes.motifs import motifs_router
 from app.api.v1.routes.organisms import organisms_router
 from app.api.v1.routes.preferences import preferences_router
-from app.api.v1.routes.test import test_router
+from app.api.v1.routes.ready import ready_router
 from app.db.db import engine
 from app.db.models.group import Group
 from app.db.models.motif import Motif, MotifDefinition
@@ -43,7 +43,7 @@ def _setup_middleware(app: FastAPI) -> None:
 
 
 def _setup_routes(app: FastAPI) -> None:
-    app.include_router(router=test_router, prefix=V1_PREFIX)
+    app.include_router(router=ready_router, prefix=V1_PREFIX)
     app.include_router(router=auth_router, prefix=V1_PREFIX)
     app.include_router(router=organisms_router, prefix=V1_PREFIX)
     app.include_router(router=preferences_router, prefix=V1_PREFIX)
