@@ -10,7 +10,6 @@ class ResponseSingle[T](BaseSchema):
     data: T
 
 
-# TODO: add pagination
 class ResponseList[T](BaseSchema):
     """Success API Response schema for a list of objects."""
 
