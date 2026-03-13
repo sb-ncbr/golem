@@ -3,15 +3,15 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geneweb/analysis/analysis_series.dart';
 import 'package:geneweb/analysis/analysis_options.dart';
-import 'package:geneweb/analysis/motif.dart';
 import 'package:geneweb/api/auth.dart';
-import 'package:geneweb/api/organism.dart';
+import 'package:geneweb/models/motif.dart';
+import 'package:geneweb/models/user.dart';
+import 'package:geneweb/models/organism.dart';
 import 'package:geneweb/genes/gene.dart';
 import 'package:geneweb/genes/stage_selection.dart';
 import 'package:geneweb/genes/gene_list.dart';
 import 'package:geneweb/genes/stages_data.dart';
 import 'package:geneweb/genes/tpm_data.dart';
-import 'package:geneweb/my_app.dart';
 import 'package:geneweb/utilities/color.dart';
 import 'package:geneweb/utilities/list.dart';
 import 'package:geneweb/utilities/stages.dart';
@@ -46,19 +46,15 @@ class LoadingState {
 }
 
 /// Main model for the UI app
+/// TODO: this should be split into multiple notifiers at some point
 class GeneModel extends ChangeNotifier {
   static const kAllStages = '__ALL__';
 
   final ValueNotifier<User?> _userNotifier = ValueNotifier<User?>(null);
 
-  final DeploymentFlavor? deploymentFlavor;
-
-  bool get publicSite => _publicSite;
-  late bool _publicSite = deploymentFlavor == DeploymentFlavor.prod;
-
   /// Currently logged in user
   User? _user;
-  
+
   User? get user => _user;
   ValueNotifier<User?> get userNotifier => _userNotifier;
 
@@ -74,7 +70,6 @@ class GeneModel extends ChangeNotifier {
   }
 
   OrganismMetadata? _metadata;
-
   OrganismMetadata? get metadata => _metadata;
 
   set metadata(OrganismMetadata? metadata) {
@@ -154,9 +149,10 @@ class GeneModel extends ChangeNotifier {
       // old format or no stage metadata provided -> take transcription rates keys from the first gene
       : metadata?.genes.values.firstOrNull?.transcriptionRates.keys.toList();
 
-  GeneModel(this.deploymentFlavor);
+  GeneModel();
 
-  static GeneModel of(BuildContext context) => Provider.of<GeneModel>(context, listen: false);
+  static GeneModel of(BuildContext context) =>
+      Provider.of<GeneModel>(context, listen: false);
 
   void _reset({bool preserveSource = false}) {
     if (!preserveSource) {
@@ -173,13 +169,6 @@ class GeneModel extends ChangeNotifier {
 
   void cancelAnalysis() {
     _analysisCancelled = true;
-    notifyListeners();
-  }
-
-  //TODO private
-  void setPublicSite(bool value) {
-    if (deploymentFlavor != null) throw Exception('Flavor is defined by deployment');
-    _publicSite = value;
     notifyListeners();
   }
 
@@ -202,7 +191,7 @@ class GeneModel extends ChangeNotifier {
     if (user == null) {
       return;
     }
-    
+
     final preferences = user!.preferences;
     final organism = sourceGenes!.organism;
     final preference = preferences.firstWhereOrNull((pref) =>
@@ -212,7 +201,9 @@ class GeneModel extends ChangeNotifier {
       preference.color = color;
     } else {
       user!.preferences.add(StagePreference(
-          organismId: sourceGenes?.organism?.id, stageName: stageName, color: color));
+          organismId: sourceGenes?.organism?.id,
+          stageName: stageName,
+          color: color));
     }
 
     if (sourceGenes != null) {
@@ -247,7 +238,8 @@ class GeneModel extends ChangeNotifier {
         // prevents the reset of motif mapping field while the organism is still loading
         return;
       }
-      analysisOptions = AnalysisOptions(alignMarker: markers.first, min: -1000, max: 1000, bucketSize: 30);
+      analysisOptions = AnalysisOptions(
+          alignMarker: markers.first, min: -1000, max: 1000, bucketSize: 30);
     } else {
       analysisOptions = const AnalysisOptions();
     }
@@ -257,7 +249,8 @@ class GeneModel extends ChangeNotifier {
     _stageSelection = StageSelection(
       selectedStages: [],
       strategy: sourceGenes?.stages != null ? null : FilterStrategy.top,
-      selection: sourceGenes?.stages != null ? null : FilterSelection.percentile,
+      selection:
+          sourceGenes?.stages != null ? null : FilterSelection.percentile,
       count: sourceGenes?.stages != null ? null : 3200,
     );
   }
@@ -293,24 +286,25 @@ class GeneModel extends ChangeNotifier {
     resetAnalysisOptions();
     resetFilter();
 
-    final defaultPreferences = await StagePreference.getDefaults();
+    final defaultPreferences = await getDefaultPreferences();
     final userPreferences =
         user?.preferences.where((pref) => pref.organismId == organism?.id) ??
             [];
-    final randomPreferences = organism!.stages.map((stage) =>
-        StagePreference(stageName: stage, color: randomStageColor(stage).toHex()));
+    final randomPreferences = organism!.stages.map((stage) => StagePreference(
+        stageName: stage, color: randomStageColor(stage).toHex()));
     final preferences = [
       ...userPreferences, // user preferences have the highest priority
       ...defaultPreferences, // then preferences of the organism
       ...randomPreferences, // if no preferences were found, use random
     ].distinctBy((pref) => pref.stageName);
-    
+
     final colors = <String, Color>{};
     for (StagePreference preference in preferences) {
       try {
         colors[preference.stageName] = HexColor.fromHex(preference.color);
       } catch (e) {
-        debugPrint('Unable to convert the color ${preference.color} ${preference.stageName} to hex');
+        debugPrint(
+            'Unable to convert the color ${preference.color} ${preference.stageName} to hex');
       }
     }
 
@@ -322,7 +316,7 @@ class GeneModel extends ChangeNotifier {
           genes, errors, (value) => progressCallback(0.5 + value / 2));
       sourceGenes = sourceGenes!.copyWith(genes: genes, errors: errors);
     }
-    
+
     notifyListeners();
   }
 
@@ -333,7 +327,8 @@ class GeneModel extends ChangeNotifier {
     required Function(double progress) progressCallback,
   }) async {
     final data = await File(path).readAsString();
-    return await loadFastaFromString(data: data, organism: organism, progressCallback: progressCallback);
+    return await loadFastaFromString(
+        data: data, organism: organism, progressCallback: progressCallback);
   }
 
   /// Loads info about stages and colors from CSV file
@@ -380,18 +375,23 @@ class GeneModel extends ChangeNotifier {
     final List<dynamic> errors = [];
     final List<Gene> genes = [
       for (final gene in sourceGenes!.genes)
-        if (tpm.stages.keys.every((stageKey) => tpm.stages[stageKey]![gene.geneId] != null))
+        if (tpm.stages.keys
+            .every((stageKey) => tpm.stages[stageKey]![gene.geneId] != null))
           gene.copyWith(transcriptionRates: {
-            for (final stage in tpm.stages.keys) stage: tpm.stages[stage]![gene.geneId]!,
+            for (final stage in tpm.stages.keys)
+              stage: tpm.stages[stage]![gene.geneId]!,
           }),
     ];
 
     if (genes.length != sourceGenes!.genes.length) {
-      errors.add('${sourceGenes!.genes.length - genes.length} genes excluded due to lack of TPM data');
+      errors.add(
+          '${sourceGenes!.genes.length - genes.length} genes excluded due to lack of TPM data');
     }
 
     sourceGenes = sourceGenes?.copyWith(
-        genes: genes, errors: errors.isEmpty ? null : [...errors, ...sourceGenes!.errors], colors: tpm.colors);
+        genes: genes,
+        errors: errors.isEmpty ? null : [...errors, ...sourceGenes!.errors],
+        colors: tpm.colors);
 
     resetAnalysisOptions();
     resetFilter();
@@ -416,19 +416,23 @@ class GeneModel extends ChangeNotifier {
     assert(stageSelection!.percentiles != null);
     assert(stageSelection!.percentiles!.isNotEmpty);
     assert(motifs.isNotEmpty);
-    final totalIterations = stageSelection!.selectedStages.length * motifs.length * stageSelection!.percentiles!.length;
+    final totalIterations = stageSelection!.selectedStages.length *
+        motifs.length *
+        stageSelection!.percentiles!.length;
     assert(totalIterations > 0);
-    
+
     int iterations = 0;
     analysisProgress = 0.0;
     _analysisCancelled = false;
     notifyListeners();
-    
-    final Set<String>? intersectingGeneIds = matchWhenAll ? _identifyIntersectingGenes(sourceGenes!, motifs) : null;
+
+    final Set<String>? intersectingGeneIds =
+        matchWhenAll ? _identifyIntersectingGenes(sourceGenes!, motifs) : null;
 
     for (final motif in motifs) {
       for (final key in stageSelection!.selectedStages) {
-        await Future.delayed(const Duration(milliseconds: 50)); // Allow UI to refresh on web
+        await Future.delayed(
+            const Duration(milliseconds: 50)); // Allow UI to refresh on web
         if (_analysisCancelled) {
           analysisProgress = null;
           notifyListeners();
@@ -446,12 +450,13 @@ class GeneModel extends ChangeNotifier {
         for (final (i, entry) in groupedGenes.entries.indexed) {
           final percentile = entry.key;
           final genes = entry.value;
-        
-          final name = '${key == kAllStages ? 'all' : key} - ${motif.name} - ${(percentile * 100).round()}th percentile';
-          final color =
-              sourceGenes?.colors.isNotEmpty == true ? (sourceGenes!.colors[key] ?? Colors.grey) : _randomColorOf(name);
+
+          final name =
+              '${key == kAllStages ? 'all' : key} - ${motif.name} - ${(percentile * 100).round()}th percentile';
+          final color = sourceGenes?.colors.isNotEmpty == true
+              ? (sourceGenes!.colors[key] ?? Colors.grey)
+              : _randomColorOf(name);
           final tintedColor = ColorMixing.tint(color, i / groupedGenes.length);
-          
 
           final stroke = key == kAllStages ? 4 : sourceGenes?.stroke[key];
           removeAnalysis(name);
@@ -471,7 +476,7 @@ class GeneModel extends ChangeNotifier {
           analyses.add(analysis);
           iterations++;
           analysisProgress = iterations / totalIterations;
-          notifyListeners();  
+          notifyListeners();
         }
       }
     }
@@ -480,7 +485,6 @@ class GeneModel extends ChangeNotifier {
     return true;
   }
 
-    
   Color _randomColorOf(String text) {
     var hash = 0;
     for (var i = 0; i < text.length; i++) {
@@ -494,7 +498,8 @@ class GeneModel extends ChangeNotifier {
     return color;
   }
 
-  Set<String> _identifyIntersectingGenes(GeneList genesList, List<Motif> motifs) {
+  Set<String> _identifyIntersectingGenes(
+      GeneList genesList, List<Motif> motifs) {
     List<Gene> candidates = genesList.genes;
 
     for (final motif in motifs) {
@@ -523,7 +528,7 @@ class GeneModel extends ChangeNotifier {
 
       candidates = survivors;
     }
-    
+
     return candidates.map((c) => c.geneId).toSet();
   }
 }

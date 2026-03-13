@@ -1,4 +1,4 @@
-import 'package:geneweb/analysis/motif.dart';
+import 'package:geneweb/models/motif.dart';
 import 'package:geneweb/genes/gene.dart';
 
 /// Holds the result of a single motif position in the gene
@@ -24,7 +24,8 @@ class AnalysisResult {
   /// returns a broader matched sequence
   String get broadMatch {
     final safeSequence = '          ${gene.data}          ';
-    return safeSequence.substring(rawPosition.toInt() + 2, rawPosition.toInt() + match.length + 18);
+    return safeSequence.substring(
+        rawPosition.toInt() + 2, rawPosition.toInt() + match.length + 18);
   }
 
   AnalysisResult({

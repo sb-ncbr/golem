@@ -1,10 +1,9 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
-import 'package:geneweb/api/organism.dart';
+import 'package:geneweb/models/organism.dart';
 import 'package:geneweb/genes/stage_selection.dart';
 import 'package:geneweb/genes/gene.dart';
 import 'package:geneweb/utilities/series.dart';
-
 
 /// Holds a list of genes
 class GeneList extends Equatable {
@@ -42,7 +41,6 @@ class GeneList extends Equatable {
     required this.stages,
     required Map<String, Color>? colors,
     required this.errors,
-
   })  : _genes = genes,
         transcriptionRates = _transcriptionRates(genes),
         _colors = colors;
@@ -50,7 +48,8 @@ class GeneList extends Equatable {
   /// Parse fasta file (with metadata stored in comments) into list of genes.
   ///
   /// Feed the result to [GeneList.fromList]
-  static Future<(List<Gene>, List<dynamic>)> parseFastaWithComments(String data, Function(double progress) progressCallback) async {
+  static Future<(List<Gene>, List<dynamic>)> parseFastaWithComments(
+      String data, Function(double progress) progressCallback) async {
     final chunks = data.split('>');
     final genes = <Gene>[];
     final errors = <dynamic>[];
@@ -72,7 +71,8 @@ class GeneList extends Equatable {
         errors.add(error);
       }
     }
-    debugPrint('.fasta parsing completed with ${genes.length} genes and ${errors.length} errors');
+    debugPrint(
+        '.fasta parsing completed with ${genes.length} genes and ${errors.length} errors');
     return (genes, errors);
   }
 
@@ -113,7 +113,9 @@ class GeneList extends Equatable {
   ///
   /// Feed the result to [GeneList.fromList]
   static Future<(List<Gene>, List<dynamic>)> takeSingleTranscript(
-      List<Gene> genes, List<dynamic> errors, Function(double progress) progressCallback) async {
+      List<Gene> genes,
+      List<dynamic> errors,
+      Function(double progress) progressCallback) async {
     final geneMap = <String, Gene>{};
     final transcriptsByGene = <String, List<String>>{};
 
@@ -138,14 +140,19 @@ class GeneList extends Equatable {
       merged.add(geneMap[first]!);
     }
 
-    debugPrint('.fasta transcript filtering completed with ${merged.length} genes and ${errors.length} errors');
+    debugPrint(
+        '.fasta transcript filtering completed with ${merged.length} genes and ${errors.length} errors');
     return (merged, errors);
   }
 
   /// Create a new GeneList from list of genes.
   ///
   /// Obtain the list by calling [parseFastaWithComments] or [parseFasta]
-  factory GeneList.fromList({required List<Gene> genes, required List<dynamic> errors, Organism? organism, Map<String, Color>? colors}) {
+  factory GeneList.fromList(
+      {required List<Gene> genes,
+      required List<dynamic> errors,
+      Organism? organism,
+      Map<String, Color>? colors}) {
     GeneList result;
     result = GeneList._(
       organism: organism,
@@ -154,7 +161,8 @@ class GeneList extends Equatable {
       colors: colors,
       stages: null,
     );
-    debugPrint('.fasta analysis completed with ${result.genes.length} genes and ${result.errors.length} errors');
+    debugPrint(
+        '.fasta analysis completed with ${result.genes.length} genes and ${result.errors.length} errors');
     return result;
   }
 
@@ -179,7 +187,9 @@ class GeneList extends Equatable {
   /// Uses [stages] or [transcriptionRates]
   /// Returns stages ordered by developments stage for known organisms
   List<String> get stageKeys {
-    return stages != null ? stages!.keys.toList() : transcriptionRates.keys.toList();
+    return stages != null
+        ? stages!.keys.toList()
+        : transcriptionRates.keys.toList();
   }
 
   /// Filters gene for given [stage]. Either uses [stages] or applies [stageSelection], if specified
@@ -252,8 +262,8 @@ class GeneList extends Equatable {
   }
 
   List<Gene> _topPercentile(double percentile, String transcriptionKey) {
-    final totalRate =
-        transcriptionRates[transcriptionKey]!.sum + 0.0001; // correction fo floating point operations error
+    final totalRate = transcriptionRates[transcriptionKey]!.sum +
+        0.0001; // correction fo floating point operations error
     final list = genes.reversed.toList();
     var rate = 0.0;
     var i = 0;
@@ -274,8 +284,8 @@ class GeneList extends Equatable {
   }
 
   List<Gene> _bottomPercentile(double percentile, String transcriptionKey) {
-    final totalRate =
-        transcriptionRates[transcriptionKey]!.sum + 0.0001; // correction fo floating point operations error;
+    final totalRate = transcriptionRates[transcriptionKey]!.sum +
+        0.0001; // correction fo floating point operations error;
     final list = genes;
     var rate = 0.0;
     var i = 0;

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:geneweb/api/api_service.dart';
-import 'package:geneweb/api/auth.dart';
+import 'package:geneweb/models/user.dart';
 import 'package:geneweb/genes/gene_model.dart';
 import 'package:dio/dio.dart';
 import 'package:geneweb/screens/home_screen.dart';
@@ -80,7 +80,8 @@ class __LockState extends State<_Lock> {
               ),
             ),
             const SizedBox(height: 20),
-            IconButton.filled(onPressed: _handleLogin, icon: const Icon(Icons.arrow_forward)),
+            IconButton.filled(
+                onPressed: _handleLogin, icon: const Icon(Icons.arrow_forward)),
           ],
         ),
       ),

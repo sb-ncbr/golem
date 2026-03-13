@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:geneweb/api/api_service.dart';
 import 'package:geneweb/genes/gene_model.dart';
-import 'package:geneweb/my_app.dart';
 import 'package:geneweb/screens/lock_screen.dart';
 import 'package:geneweb/widgets/home.dart';
 import 'package:provider/provider.dart';
@@ -15,8 +14,6 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final name = context.select<GeneModel, String?>((model) => model.name);
     final username = context.select<GeneModel, String?>((model) => model.user?.username);
-    final deploymentFlavor = context.select<GeneModel, DeploymentFlavor?>((model) => model.deploymentFlavor);
-    final public = context.select<GeneModel, bool>((model) => model.publicSite);
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: 80.0,
@@ -102,14 +99,6 @@ class HomeScreen extends StatelessWidget {
             )
           ],
         ),
-        actions: deploymentFlavor != null
-            ? null
-            : <Widget>[
-                IconButton(
-                  icon: public ? const Icon(Icons.lock_open) : const Icon(Icons.lock),
-                  onPressed: () => GeneModel.of(context).setPublicSite(!public),
-                ),
-              ],
       ),
       body: const Home(),
     );

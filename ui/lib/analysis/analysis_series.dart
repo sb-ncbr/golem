@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:geneweb/analysis/analysis_result.dart';
 import 'package:geneweb/analysis/distribution.dart';
-import 'package:geneweb/analysis/motif.dart';
+import 'package:geneweb/models/motif.dart';
 import 'package:geneweb/genes/gene.dart';
 import 'package:geneweb/genes/gene_list.dart';
 
@@ -61,43 +61,43 @@ class AnalysisSeries {
   }
 
   /// Runs the analysis on the given [geneList]
-  factory AnalysisSeries.run({
-    /// The [GeneList] to run the analysis on
-    required GeneList geneList,
+  factory AnalysisSeries.run(
+      {
+      /// The [GeneList] to run the analysis on
+      required GeneList geneList,
 
-    /// When `true`, analysis will filter overlapping matches
-    noOverlaps = true,
+      /// When `true`, analysis will filter overlapping matches
+      noOverlaps = true,
 
-    /// The minimum position to include in the distribution
-    required int min,
+      /// The minimum position to include in the distribution
+      required int min,
 
-    /// The maximum position to include in the distribution
-    required int max,
+      /// The maximum position to include in the distribution
+      required int max,
 
-    /// The bucket size to use for the distribution
-    required int bucketSize,
+      /// The bucket size to use for the distribution
+      required int bucketSize,
 
-    /// The [Motif] to search for
-    required Motif motif,
+      /// The [Motif] to search for
+      required Motif motif,
 
-    /// The name of the series
-    required String name,
+      /// The name of the series
+      required String name,
 
-    /// The color of the series
-    required Color color,
+      /// The color of the series
+      required Color color,
 
-    /// What alignment market to use (normally ATG or TSS)
-    String? alignMarker,
+      /// What alignment market to use (normally ATG or TSS)
+      String? alignMarker,
 
-    /// The stroke width of the series
-    int? stroke,
+      /// The stroke width of the series
+      int? stroke,
 
-    /// Whether the series is visible
-    bool visible = true,
+      /// Whether the series is visible
+      bool visible = true,
 
-    /// Whitelist of genes to include (not provided => use all)
-    Set<String>? allowedGeneIds
-  }) {
+      /// Whitelist of genes to include (not provided => use all)
+      Set<String>? allowedGeneIds}) {
     /// find the matches
     List<AnalysisResult> results = [];
     Iterable<Gene> genesToAnalyze = switch (allowedGeneIds) {
@@ -169,7 +169,8 @@ class AnalysisSeries {
   }
 
   /// Filter out matches that overlap each other
-  static List<AnalysisResult> filterOverlappingMatches(List<AnalysisResult> list) {
+  static List<AnalysisResult> filterOverlappingMatches(
+      List<AnalysisResult> list) {
     list.sort(
       (a, b) => a.rawPosition.compareTo(b.rawPosition),
     );
@@ -194,7 +195,10 @@ class AnalysisSeries {
   List<DrillDownResult> drillDown(String? pattern) {
     final filteredResult = pattern == null
         ? result!
-        : result!.where((e) => Motif.toRegExp(pattern, true).hasMatch(e.matchedSequence)).toList();
+        : result!
+            .where((e) =>
+                Motif.toRegExp(pattern, true).hasMatch(e.matchedSequence))
+            .toList();
     List<String> testPatterns;
     if (pattern != null) {
       testPatterns = [
@@ -210,15 +214,19 @@ class AnalysisSeries {
     }
     Map<String, int> counts = {};
     for (final testPattern in testPatterns) {
-      counts[testPattern] =
-          filteredResult.where((e) => Motif.toRegExp(testPattern, true).hasMatch(e.matchedSequence)).length;
+      counts[testPattern] = filteredResult
+          .where((e) =>
+              Motif.toRegExp(testPattern, true).hasMatch(e.matchedSequence))
+          .length;
     }
     final List<DrillDownResult> drillDownResults = [
       for (final testPattern in counts.keys)
         DrillDownResult(
           testPattern,
           counts[testPattern]!,
-          filteredResult.isEmpty ? null : counts[testPattern]! / filteredResult.length,
+          filteredResult.isEmpty
+              ? null
+              : counts[testPattern]! / filteredResult.length,
           result!.isEmpty ? null : counts[testPattern]! / result!.length,
         ),
     ];

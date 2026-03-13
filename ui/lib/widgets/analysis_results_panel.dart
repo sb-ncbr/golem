@@ -5,9 +5,9 @@ import 'package:faabul_color_picker/faabul_color_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:geneweb/analysis/analysis_series.dart';
-import 'package:geneweb/analysis/motif.dart';
+import 'package:geneweb/models/motif.dart';
+import 'package:geneweb/models/organism.dart';
 import 'package:geneweb/api/api_service.dart';
-import 'package:geneweb/api/organism.dart';
 import 'package:geneweb/genes/gene_list.dart';
 import 'package:geneweb/genes/gene_model.dart';
 import 'package:geneweb/genes/stage_selection.dart';
@@ -70,7 +70,7 @@ class _AnalysisResultsPanelState extends State<AnalysisResultsPanel> {
   Widget build(BuildContext context) {
     final sourceGenes =
         context.select<GeneModel, GeneList?>((model) => model.sourceGenes);
-    final metadata = 
+    final metadata =
         context.select<GeneModel, OrganismMetadata?>((model) => model.metadata);
     final motifs =
         context.select<GeneModel, List<Motif>>((model) => model.motifs);
@@ -191,41 +191,41 @@ class _AnalysisResultsPanelState extends State<AnalysisResultsPanel> {
                       ),
                       if (_inputExportProgress != null)
                         _ExportIndicator(exportProgress: _inputExportProgress)
-                      else
-                        if (sourceGenes != null && metadata != null)
-                          TextButton(
-                            statesController:
-                                WidgetStatesController({WidgetState.disabled}),
-                            onPressed: () async {
-                              setState(() {
-                                _inputExportProgress = .2;
-                              });
+                      else if (sourceGenes != null && metadata != null)
+                        TextButton(
+                          statesController:
+                              WidgetStatesController({WidgetState.disabled}),
+                          onPressed: () async {
+                            setState(() {
+                              _inputExportProgress = .2;
+                            });
 
-                              final organism = sourceGenes.organism!;
-                              final exportResponse = await ApiService.instance
-                                  .download('/organisms/export/${organism.id}');
+                            final organism = sourceGenes.organism!;
+                            final exportResponse = await ApiService.instance
+                                .download('/organisms/export/${organism.id}');
 
-                              if (!exportResponse.success) {
-                                _scaffoldMessenger.showSnackBar(const SnackBar(
-                                    content:
-                                        Text('Unable to download source data.'),
-                                    backgroundColor: Colors.red));
-                                return;
-                              }
+                            if (!exportResponse.success) {
+                              _scaffoldMessenger.showSnackBar(const SnackBar(
+                                  content:
+                                      Text('Unable to download source data.'),
+                                  backgroundColor: Colors.red));
+                              return;
+                            }
 
-                              setState(() {
-                                _inputExportProgress = .6;
-                              });
+                            setState(() {
+                              _inputExportProgress = .6;
+                            });
 
-                              downloadFile(exportResponse.data, 'application/zip', 'source_data.zip');
-                              setState(() {
-                                _inputExportProgress = null;
-                              });
-                            },
-                            child: const Text('Download input data'),
-                          )
-                      ],
-                    ),
+                            downloadFile(exportResponse.data, 'application/zip',
+                                'source_data.zip');
+                            setState(() {
+                              _inputExportProgress = null;
+                            });
+                          },
+                          child: const Text('Download input data'),
+                        )
+                    ],
+                  ),
                 TextButton(
                     onPressed: _handleResetAnalyses,
                     child: const Text('Close analysis')),
@@ -486,8 +486,9 @@ class _AnalysisResultsPanelState extends State<AnalysisResultsPanel> {
     final output = AnalysisSeriesExport(analysis);
     final filename = sanitizeFilename('${analysis.name}.xlsx');
 
-    final data = await output.toExcelAndSave(
-        filename, progressCallback: (progress) => setState(() => _exportProgress = progress));
+    final data = await output.toExcelAndSave(filename,
+        progressCallback: (progress) =>
+            setState(() => _exportProgress = progress));
     if (data == null) return;
     debugPrint('Saving $filename (${data.length} bytes)');
     setState(() => _exportProgress = null);
@@ -515,10 +516,10 @@ class _AnalysisResultsPanelState extends State<AnalysisResultsPanel> {
         archive.addFile(ArchiveFile(filename, encodedData.length, encodedData));
       }
     }
-    
+
     final distributionOutput =
         DistributionsExport(analyses.map((e) => e.distribution!).toList());
-        final stageName = _model.stageSelection!.selectedStages.length == 1
+    final stageName = _model.stageSelection!.selectedStages.length == 1
         ? _model.stageSelection!.selectedStages.first
         : '${_model.stageSelection!.selectedStages.length} stages';
     final motifName = _model.motifs.length == 1
@@ -527,10 +528,11 @@ class _AnalysisResultsPanelState extends State<AnalysisResultsPanel> {
     final filename =
         'distributions_${_model.name}_${motifName}_$stageName.xlsx';
     final distributionExcel = await distributionOutput.toExcel(filename);
-    
+
     final encodedDistribution = distributionExcel.encode();
     if (encodedDistribution != null) {
-      archive.addFile(ArchiveFile(filename, encodedDistribution.length, encodedDistribution));
+      archive.addFile(ArchiveFile(
+          filename, encodedDistribution.length, encodedDistribution));
     }
 
     downloadFile(zipEncoder.encode(archive), 'application/zip', 'series.zip');

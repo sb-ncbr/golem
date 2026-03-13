@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:geneweb/analysis/analysis_options.dart';
-import 'package:geneweb/analysis/motif.dart';
+import 'package:geneweb/models/motif.dart';
 import 'package:geneweb/api/motif.dart';
 import 'package:geneweb/genes/gene_list.dart';
 import 'package:geneweb/genes/stage_selection.dart';
@@ -58,12 +58,16 @@ class _HomeState extends State<Home> {
 
   @override
   Widget build(BuildContext context) {
-    final organismAndStages =
-        context.select<GeneModel, String?>((model) => '${model.name} ${model.sourceGenes?.stageKeys.join('+')}');
-    final sourceGenes = context.select<GeneModel, GeneList?>((model) => model.sourceGenes);
-    final motifs = context.select<GeneModel, List<Motif>>((model) => model.motifs);
-    final filter = context.select<GeneModel, StageSelection?>((model) => model.stageSelection);
-    final expectedResults = context.select<GeneModel, int>((model) => model.expectedSeriesCount);
+    final organismAndStages = context.select<GeneModel, String?>(
+        (model) => '${model.name} ${model.sourceGenes?.stageKeys.join('+')}');
+    final sourceGenes =
+        context.select<GeneModel, GeneList?>((model) => model.sourceGenes);
+    final motifs =
+        context.select<GeneModel, List<Motif>>((model) => model.motifs);
+    final filter = context
+        .select<GeneModel, StageSelection?>((model) => model.stageSelection);
+    final expectedResults =
+        context.select<GeneModel, int>((model) => model.expectedSeriesCount);
     final colorScheme = Theme.of(context).colorScheme;
 
     return SingleChildScrollView(
@@ -74,7 +78,8 @@ class _HomeState extends State<Home> {
           Stepper(
             currentStep: _index,
             onStepCancel: _index > 0 ? _handleStepCancel : null,
-            onStepContinue: _isStepAllowed(_index + 1) ? _handleStepContinue : null,
+            onStepContinue:
+                _isStepAllowed(_index + 1) ? _handleStepContinue : null,
             onStepTapped: _handleStepTapped,
             physics: const NeverScrollableScrollPhysics(),
             steps: <Step>[
@@ -91,22 +96,30 @@ class _HomeState extends State<Home> {
               Step(
                 title: const Text('Genomic interval'),
                 subtitle: const AnalysisOptionsSubtitle(),
-                content:
-                    AnalysisOptionsPanel(key: ValueKey(organismAndStages), onChanged: _handleAnalysisOptionsChanged),
-                state: sourceGenes == null ? StepState.indexed : StepState.complete,
+                content: AnalysisOptionsPanel(
+                    key: ValueKey(organismAndStages),
+                    onChanged: _handleAnalysisOptionsChanged),
+                state: sourceGenes == null
+                    ? StepState.indexed
+                    : StepState.complete,
               ),
               Step(
                 title: const Text('Analyzed motifs'),
                 subtitle: const MotifSubtitle(),
-                content: FutureBuilder(future: _futureMotifs, builder: (context, snapshot) {
-                  if (snapshot.hasData) {
-                    return MotifPanel(key: ValueKey(organismAndStages), motifs: snapshot.data!, onChanged: _handleMotifsChanged);
-                  } else if (snapshot.hasError) {
-                    return Text('${snapshot.error}');
-                  }
-                  
-                  return const CircularProgressIndicator();
-                }),
+                content: FutureBuilder(
+                    future: _futureMotifs,
+                    builder: (context, snapshot) {
+                      if (snapshot.hasData) {
+                        return MotifPanel(
+                            key: ValueKey(organismAndStages),
+                            motifs: snapshot.data!,
+                            onChanged: _handleMotifsChanged);
+                      } else if (snapshot.hasError) {
+                        return Text('${snapshot.error}');
+                      }
+
+                      return const CircularProgressIndicator();
+                    }),
                 state: expectedResults > 60 && motifs.length > 5
                     ? StepState.error
                     : motifs.isEmpty
@@ -116,9 +129,12 @@ class _HomeState extends State<Home> {
               Step(
                 title: const Text('Developmental stages'),
                 subtitle: const StageSubtitle(),
-                content: StagePanel(key: ValueKey(organismAndStages), onChanged: _handleStageSelectionChanged),
+                content: StagePanel(
+                    key: ValueKey(organismAndStages),
+                    onChanged: _handleStageSelectionChanged),
                 state: filter?.selectedStages.isEmpty == true ||
-                        expectedResults > 60 && (filter?.selectedStages.length ?? 0) > 5
+                        expectedResults > 60 &&
+                            (filter?.selectedStages.length ?? 0) > 5
                     ? StepState.error
                     : StepState.indexed,
               ),
@@ -138,32 +154,32 @@ class _HomeState extends State<Home> {
                       style: Theme.of(context).textTheme.headlineLarge),
                 ),
                 Padding(
-                    padding: const EdgeInsetsGeometry.only(bottom: 32),
-                    child: RichText(
-                        text: TextSpan(
-                          children: [
-                            const TextSpan(
-                              text:
-                                  'If you find the GOLEM (Gene regulatOry eLEMents) tool helpful, ',
-                            ),
-                            const TextSpan(
-                              text: 'please cite: ',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            TextSpan(
-                              text:
-                                  'Nevosád L, Klodová B, Rudolf J, Raček T, Přerovská T, Kusová A, Svobodová R, Honys D, Schrumpfová P P (2025). GOLEM: a tool for visualizing the distribution of gene regulatOry eLements within plant promoters with a focus on the male gametophyte. Plant Journal, 121(5), e70037, doi.org/10.1111/tpj.70037',
-                              style: TextStyle(color: colorScheme.primary),
-                              recognizer: TapGestureRecognizer()
-                                ..onTap = () {
-                                  launchUrl(Uri.parse(
-                                  'https://doi.org/10.1111/tpj.70037'));
-                                },
-                            ),
-                          ],
+                  padding: const EdgeInsetsGeometry.only(bottom: 32),
+                  child: RichText(
+                    text: TextSpan(
+                      children: [
+                        const TextSpan(
+                          text:
+                              'If you find the GOLEM (Gene regulatOry eLEMents) tool helpful, ',
                         ),
-                      ),
-                    )
+                        const TextSpan(
+                          text: 'please cite: ',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        TextSpan(
+                          text:
+                              'Nevosád L, Klodová B, Rudolf J, Raček T, Přerovská T, Kusová A, Svobodová R, Honys D, Schrumpfová P P (2025). GOLEM: a tool for visualizing the distribution of gene regulatOry eLements within plant promoters with a focus on the male gametophyte. Plant Journal, 121(5), e70037, doi.org/10.1111/tpj.70037',
+                          style: TextStyle(color: colorScheme.primary),
+                          recognizer: TapGestureRecognizer()
+                            ..onTap = () {
+                              launchUrl(Uri.parse(
+                                  'https://doi.org/10.1111/tpj.70037'));
+                            },
+                        ),
+                      ],
+                    ),
+                  ),
+                )
               ],
             ),
           ),
@@ -180,26 +196,26 @@ class _HomeState extends State<Home> {
                       style: Theme.of(context).textTheme.headlineLarge),
                 ),
                 Padding(
-                    padding: const EdgeInsetsGeometry.only(bottom: 32),
-                    child: RichText(
-                        text: TextSpan(
-                          children: [
-                            const TextSpan(
-                              text: 'Users with genomes not yet available in GOLEM or with private transcriptome datasets (e.g., tissue-specific, stress-affected, or mutant samples) can visualize motifs using a private-access version of the software. Contact: '
-                            ),
-                            TextSpan(
-                              text: 'schpetra@sci.muni.cz',
-                              style: TextStyle(color: colorScheme.primary),
-                              recognizer: TapGestureRecognizer()
-                                ..onTap = () {
-                                  launchUrl(
+                  padding: const EdgeInsetsGeometry.only(bottom: 32),
+                  child: RichText(
+                    text: TextSpan(
+                      children: [
+                        const TextSpan(
+                            text:
+                                'Users with genomes not yet available in GOLEM or with private transcriptome datasets (e.g., tissue-specific, stress-affected, or mutant samples) can visualize motifs using a private-access version of the software. Contact: '),
+                        TextSpan(
+                          text: 'schpetra@sci.muni.cz',
+                          style: TextStyle(color: colorScheme.primary),
+                          recognizer: TapGestureRecognizer()
+                            ..onTap = () {
+                              launchUrl(
                                   Uri.parse('mailto:schpetra@sci.muni.cz'));
-                                },
-                            ),
-                          ],
+                            },
                         ),
-                      ),
-                    )
+                      ],
+                    ),
+                  ),
+                )
               ],
             ),
           ),
@@ -230,7 +246,9 @@ class _HomeState extends State<Home> {
       case 3: // stage
         return model.metadata != null || model.sourceGenes != null;
       case 4: // analysis
-        return (model.sourceGenes != null) && model.expectedSeriesCount > 0 && model.expectedSeriesCount <= 60;
+        return (model.sourceGenes != null) &&
+            model.expectedSeriesCount > 0 &&
+            model.expectedSeriesCount <= 60;
       default:
         return false;
     }
@@ -245,7 +263,8 @@ class _HomeState extends State<Home> {
   Future<void> _handleStepContinue() async {
     final nextStep = _index + 1;
     if (nextStep == 4) {
-      await Navigator.of(context).push(MaterialPageRoute(builder: (context) => const AnalysisScreen()));
+      await Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => const AnalysisScreen()));
       _model.removeAnalyses();
       return;
     }

@@ -1,9 +1,9 @@
 import 'dart:collection';
 
 import 'package:flutter/material.dart';
-import 'package:geneweb/analysis/motif.dart';
+import 'package:geneweb/models/motif.dart';
 import 'package:geneweb/api/motif.dart';
-import 'package:geneweb/api/organism.dart';
+import 'package:geneweb/models/organism.dart';
 import 'package:geneweb/genes/gene_list.dart';
 import 'package:geneweb/genes/gene_model.dart';
 import 'package:geneweb/utilities/message.dart';
@@ -16,17 +16,24 @@ class MotifSubtitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final motifs = context.select<GeneModel, List<Motif>>((model) => model.motifs);
-    final expectedResults = context.select<GeneModel, int>((model) => model.expectedSeriesCount);
-    final matchWhenAll = context.select<GeneModel, bool>((model) => model.matchWhenAll);
+    final motifs =
+        context.select<GeneModel, List<Motif>>((model) => model.motifs);
+    final expectedResults =
+        context.select<GeneModel, int>((model) => model.expectedSeriesCount);
+    final matchWhenAll =
+        context.select<GeneModel, bool>((model) => model.matchWhenAll);
     if (expectedResults > 60 && motifs.length > 5) {
-      return Text('Analysis would result in $expectedResults series, reduce the number of selected motifs');
+      return Text(
+          'Analysis would result in $expectedResults series, reduce the number of selected motifs');
     }
     return motifs.isEmpty
         ? const Text('Choose motifs to analyze or enter a custom motif')
         : motifs.length == 1
-            ? Text(truncate('${motifs.first.name} (${motifs.first.definitions.join(', ')})', 100))
-            : Text('${motifs.length} motifs, ${matchWhenAll ? 'matching when ALL motifs are found' : 'matching separately'}');
+            ? Text(truncate(
+                '${motifs.first.name} (${motifs.first.definitions.join(', ')})',
+                100))
+            : Text(
+                '${motifs.length} motifs, ${matchWhenAll ? 'matching when ALL motifs are found' : 'matching separately'}');
   }
 }
 
@@ -45,7 +52,7 @@ class MotifPanel extends StatefulWidget {
 class _MotifPanelState extends State<MotifPanel> {
   final _formKey = GlobalKey<FormState>();
   late final _model = GeneModel.of(context);
-  
+
   String? _customMotifName;
   String? _customMotifDefinition;
   String? _customMotifError;
@@ -53,7 +60,7 @@ class _MotifPanelState extends State<MotifPanel> {
   final _definitionController = TextEditingController();
   final _reverseComplementsController = TextEditingController();
   bool _showEditor = false;
-  
+
   late final List<Motif> _motifs;
 
   _MotifPanelState(List<Motif> motifs) {
@@ -75,15 +82,20 @@ class _MotifPanelState extends State<MotifPanel> {
 
   @override
   Widget build(BuildContext context) {
-    final sourceGenes = context.select<GeneModel, GeneList?>((model) => model.sourceGenes);
-    final metadata = context.select<GeneModel, OrganismMetadata?>((model) => model.metadata);
-    if (sourceGenes == null && metadata == null) return const Center(child: Text('Load source data first'));
-    final motifs = context.select<GeneModel, List<Motif>>((model) => model.motifs);
-    final matchWhenAll = context.select<GeneModel, bool>((model) => model.matchWhenAll);
+    final sourceGenes =
+        context.select<GeneModel, GeneList?>((model) => model.sourceGenes);
+    final metadata =
+        context.select<GeneModel, OrganismMetadata?>((model) => model.metadata);
+    if (sourceGenes == null && metadata == null)
+      return const Center(child: Text('Load source data first'));
+    final motifs =
+        context.select<GeneModel, List<Motif>>((model) => model.motifs);
+    final matchWhenAll =
+        context.select<GeneModel, bool>((model) => model.matchWhenAll);
     final customMotifs = motifs.where((m) => m.isCustom).toList();
     final textTheme = Theme.of(context).textTheme;
     final motifGroups = _groupMotifs(_motifs);
-    
+
     return Align(
       alignment: Alignment.topLeft,
       child: Form(
@@ -162,12 +174,8 @@ class _MotifPanelState extends State<MotifPanel> {
                   spacing: 2,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Row(spacing: 4, children: [
-                      Text(
-                          'Search only in genes containing all selected motifs'),
-                      Text('(PREVIEW)',
-                          style: TextStyle(fontWeight: FontWeight.bold))
-                    ]),
+                    const Text(
+                        'Search only in genes containing all selected motifs'),
                     Text(
                         '(By default, motifs are searched independently. This option restricts the analysis to genes that contain all selected motifs simultaneously.)',
                         style: textTheme.labelSmall)
@@ -224,7 +232,8 @@ class _MotifPanelState extends State<MotifPanel> {
             maxLines: null,
             readOnly: true,
             enabled: false,
-            decoration: const InputDecoration(labelText: "Reverse complements (read only)"),
+            decoration: const InputDecoration(
+                labelText: "Reverse complements (read only)"),
           ),
         ),
         ElevatedButton(onPressed: _handleAddMotif, child: const Text('ADD')),
@@ -250,8 +259,9 @@ class _MotifPanelState extends State<MotifPanel> {
     final error = _validateMotifDefinition(_customMotifDefinition);
     setState(() => _customMotifError = error);
     if (error == null) {
-      final motif =
-          Motif(name: _customMotifName ?? 'Unnamed motif', definitions: _getDefinitions(_customMotifDefinition!));
+      final motif = Motif(
+          name: _customMotifName ?? 'Unnamed motif',
+          definitions: _getDefinitions(_customMotifDefinition!));
       _reverseComplementsController.text = motif.reverseDefinitions.join('\n');
     } else {
       _reverseComplementsController.text = '';
@@ -259,7 +269,12 @@ class _MotifPanelState extends State<MotifPanel> {
   }
 
   List<String> _getDefinitions(String raw) {
-    return raw.toUpperCase().split('\n').map((line) => line.trim()).where((line) => line.isNotEmpty).toList();
+    return raw
+        .toUpperCase()
+        .split('\n')
+        .map((line) => line.trim())
+        .where((line) => line.isNotEmpty)
+        .toList();
   }
 
   String? _validateMotifDefinition(String? value) {
@@ -290,8 +305,10 @@ class _MotifPanelState extends State<MotifPanel> {
   Future<void> _handleAddMotif() async {
     if (_formKey.currentState!.validate()) {
       final definitions = _getDefinitions(_customMotifDefinition!);
-      final name = (_customMotifName ?? '') != '' ? _customMotifName : definitions.first;
-      final motif = Motif(name: name!, definitions: definitions, isCustom: true);
+      final name =
+          (_customMotifName ?? '') != '' ? _customMotifName : definitions.first;
+      final motif =
+          Motif(name: name!, definitions: definitions, isCustom: true);
 
       if (_model.isSignedIn) {
         final newMotif = await createMotif(motif);
@@ -309,7 +326,11 @@ class _MotifCard extends StatelessWidget {
   final Function(bool value) onToggle;
   final bool isSelected;
   late final Function onDelete;
-  _MotifCard({required this.motif, required this.onToggle, required this.isSelected, Function? onDelete}) {
+  _MotifCard(
+      {required this.motif,
+      required this.onToggle,
+      required this.isSelected,
+      Function? onDelete}) {
     this.onDelete = onDelete ?? () {};
   }
 

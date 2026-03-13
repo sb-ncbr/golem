@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 
-import 'package:geneweb/api/organism.dart';
+import 'package:geneweb/models/organism.dart';
 
 /// Holds a single gene data
 class Gene {
@@ -29,9 +29,11 @@ class Gene {
         header = line;
         geneId = geneIdRegExp.firstMatch(line)?.namedGroup('gene');
       } else if (line[0] == ';') {
-        final transcriptionRatesJson = transcriptionRatesRegExp.firstMatch(line)?.namedGroup('json');
+        final transcriptionRatesJson =
+            transcriptionRatesRegExp.firstMatch(line)?.namedGroup('json');
         if (transcriptionRatesJson != null) {
-          transcriptionRates = Map<String, num>.from(jsonDecode(transcriptionRatesJson));
+          transcriptionRates =
+              Map<String, num>.from(jsonDecode(transcriptionRatesJson));
         }
         final markersJson = markersRegExp.firstMatch(line)?.namedGroup('json');
         if (markersJson != null) {
@@ -49,11 +51,13 @@ class Gene {
     if (atg != null) {
       final codon = sequence.substring(atg - 1, atg - 1 + 3);
       if (codon != 'ATG' && codon != 'CAT') {
-        throw StateError('$geneId: Expected `ATG`/`CAT` at ATG position of $atg, got `$codon` instead.');
+        throw StateError(
+            '$geneId: Expected `ATG`/`CAT` at ATG position of $atg, got `$codon` instead.');
       }
     }
     return Gene._(
-      geneId: String.fromCharCodes(geneId.codeUnits), // Ensure geneId not references the original string
+      geneId: String.fromCharCodes(
+          geneId.codeUnits), // Ensure geneId not references the original string
       data: sequence,
       transcriptionRates: transcriptionRates ?? {},
       markers: markers ?? {},
@@ -61,7 +65,8 @@ class Gene {
   }
 
   /// Loads the gene from FASTA file chunk
-  factory Gene.fromFasta(List<String> lines, OrganismMetadata organismMetadata) {
+  factory Gene.fromFasta(
+      List<String> lines, OrganismMetadata organismMetadata) {
     String? header;
     String? geneId;
     List<String> data = [];
@@ -94,11 +99,13 @@ class Gene {
     if (atg != null) {
       final codon = sequence.substring(atg - 1, atg - 1 + 3);
       if (codon != 'ATG' && codon != 'CAT') {
-        throw StateError('$geneId: Expected `ATG`/`CAT` at ATG position of $atg, got `$codon` instead.');
+        throw StateError(
+            '$geneId: Expected `ATG`/`CAT` at ATG position of $atg, got `$codon` instead.');
       }
     }
     return Gene._(
-      geneId: String.fromCharCodes(geneId.codeUnits), // Ensure geneId not references the original string
+      geneId: String.fromCharCodes(
+          geneId.codeUnits), // Ensure geneId not references the original string
       data: sequence,
       transcriptionRates: metadata.transcriptionRates,
       markers: metadata.markers,
@@ -107,7 +114,8 @@ class Gene {
 
   static final geneIdRegExp = RegExp(r"(?<gene>[A-Za-z0-9+_\.\-]+)");
   static final markersRegExp = RegExp(r";MARKERS (?<json>\{.*\})$");
-  static final transcriptionRatesRegExp = RegExp(r";TRANSCRIPTION_RATES (?<json>\{.*\})$");
+  static final transcriptionRatesRegExp =
+      RegExp(r";TRANSCRIPTION_RATES (?<json>\{.*\})$");
 
   /// Raw nucleotides data
   final String data;

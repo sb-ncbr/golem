@@ -2,12 +2,18 @@ name: GOLEM Deploy
 
 on:
   workflow_dispatch:
+    inputs:
+      environment:
+        type: choice
+        options: ["Production", "Development"]
+        required: true
+        description: "Select the environment to deploy to"
 
 jobs:
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
-    environment: Production
+    environment: ${{ inputs.environment }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -31,9 +37,10 @@ jobs:
             export GOLEM_SECRET_KEY=${{ secrets.GOLEM_SECRET_KEY }}
             export GOLEM_DATABASE_PASSWORD=${{ secrets.GOLEM_DATABASE_PASSWORD }}
             export GOLEM_SERVER_NAME=${{ vars.GOLEM_SERVER_NAME }}
+            export GOLEM_DEPLOY_USERNAME=${{ secrets.SSH_USERNAME }}
 
             echo "Navigating to the deployment directory ..."
-            cd /home/ubuntu/geneweb/deployment
+            cd /home/${{ secrets.SSH_USERNAME }}/geneweb/deployment
 
             echo "Pulling latest changes ..."
             sudo git fetch --all
@@ -41,7 +48,7 @@ jobs:
             sudo git reset --hard origin/$BRANCH_NAME
 
             echo "Building images ..."
-            sudo -E docker compose build --no-cache
+            sudo -E docker compose build
 
             echo "Starting new containers ..."
             sudo -E docker compose up -d --remove-orphans

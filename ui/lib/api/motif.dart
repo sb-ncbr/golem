@@ -1,4 +1,4 @@
-import 'package:geneweb/analysis/motif.dart';
+import 'package:geneweb/models/motif.dart';
 import 'package:geneweb/api/api_service.dart';
 
 Future<List<Motif>> fetchMotifs({Function(String)? onError}) async {
@@ -25,7 +25,8 @@ Future<Motif> createMotif(Motif motif, {Function(String)? onError}) async {
   return Motif.fromJson(response.data);
 }
 
-Future<void> deleteMotif(String id, {Function? onSuccess, Function(String)? onError}) async {
+Future<void> deleteMotif(String id,
+    {Function? onSuccess, Function(String)? onError}) async {
   final response = await ApiService.instance.delete('/motifs/$id');
 
   if (!response.success) {

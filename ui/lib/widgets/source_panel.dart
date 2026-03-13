@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geneweb/api/api_service.dart';
 import 'package:geneweb/api/organism.dart';
+import 'package:geneweb/models/organism.dart';
 import 'package:geneweb/genes/gene_list.dart';
 import 'package:geneweb/genes/gene_model.dart';
 import 'package:provider/provider.dart';
@@ -96,8 +97,6 @@ class _SourcePanelState extends State<SourcePanel> {
   }
 
   Widget _buildLoad(BuildContext context) {
-    final publicSite =
-        context.select<GeneModel, bool>((model) => model.publicSite);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -127,10 +126,9 @@ class _SourcePanelState extends State<SourcePanel> {
                   }
                   return const CircularProgressIndicator();
                 }),
-            if (!publicSite)
-              TextButton(
-                  onPressed: _handlePickFastaFile,
-                  child: const Text('Load custom .fasta file…')),
+            TextButton(
+                onPressed: _handlePickFastaFile,
+                child: const Text('Load custom .fasta file…')),
           ],
         ),
       ],
@@ -162,28 +160,25 @@ class _SourcePanelState extends State<SourcePanel> {
   }
 
   Widget _buildLoadedState(BuildContext context) {
-    final publicSite =
-        context.select<GeneModel, bool>((model) => model.publicSite);
     final sourceGenes =
         context.select<GeneModel, GeneList>((model) => model.sourceGenes!);
     final sampleErrors = sourceGenes.errors.take(100);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (!publicSite)
-          Wrap(
-            spacing: 8.0,
-            runSpacing: 8.0,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              TextButton(
-                  onPressed: _handlePickTPMFile,
-                  child: const Text('Add custom TPM (.csv)…')), //TODO
-              TextButton(
-                  onPressed: _handlePickStagesFile,
-                  child: const Text('Add custom Stages (.csv)…')),
-            ],
-          ),
+        Wrap(
+          spacing: 8.0,
+          runSpacing: 8.0,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            TextButton(
+                onPressed: _handlePickTPMFile,
+                child: const Text('Add custom TPM (.csv)…')), //TODO
+            TextButton(
+                onPressed: _handlePickStagesFile,
+                child: const Text('Add custom Stages (.csv)…')),
+          ],
+        ),
         const SizedBox(height: 16),
         TextButton(
             onPressed: _handleClear,
@@ -213,19 +208,15 @@ class _SourcePanelState extends State<SourcePanel> {
     );
   }
 
-
   Future<void> _handlePickOrganism(Organism organism) async {
     final model = GeneModel.of(context);
     await _handleDownloadMetadata(organism);
-
 
     final content = await _download(organism.sequencesFilename);
     final filename = organism.sequencesFilename.replaceAll('.gz', '');
 
     model.loading = LoadingState(
-        isLoading: true,
-        progress: 0.8,
-        message: 'Analyzing $filename…');
+        isLoading: true, progress: 0.8, message: 'Analyzing $filename…');
 
     await Future.delayed(const Duration(milliseconds: 20));
     await model.loadFastaFromString(
@@ -234,7 +225,7 @@ class _SourcePanelState extends State<SourcePanel> {
         progressCallback: (value) {
           model.loading = model.loading.copyWith(progress: 0.8 + value * 0.2);
         });
-    
+
     model.loading = LoadingState(isLoading: false);
   }
 
@@ -251,7 +242,7 @@ class _SourcePanelState extends State<SourcePanel> {
       final filename = result.files.single.name;
       setState(() => _loadingMessage = 'Loading $filename…');
       await Future.delayed(const Duration(milliseconds: 100));
-      
+
       final organism = Organism.fromFile(filename);
       if (kIsWeb) {
         final data = const Utf8Decoder().convert(result.files.single.bytes!);
@@ -279,9 +270,6 @@ class _SourcePanelState extends State<SourcePanel> {
             backgroundColor: Colors.red,
             content: Text(
                 'Imported ${_model.sourceGenes?.genes.length} genes, ${_model.sourceGenes?.errors.length} errors.')));
-      }
-      if (_model.publicSite) {
-        widget.onShouldClose();
       }
     } catch (error) {
       _scaffoldMessenger.showSnackBar(SnackBar(
@@ -344,16 +332,17 @@ class _SourcePanelState extends State<SourcePanel> {
     model.metadata = metadata;
 
     organism.stages.addAll(model.stageKeys ?? []);
-    
+
     widget.onShouldClose();
     setState(() => _loadingMessage = null);
     setState(() => _progress = null);
   }
-  
+
   Future<String> _download(String filename) async {
     final model = GeneModel.of(context);
     try {
-      model.loading = LoadingState(isLoading: true, message: 'Downloading $filename.', progress: 0.3);
+      model.loading = LoadingState(
+          isLoading: true, message: 'Downloading $filename.', progress: 0.3);
       debugPrint('Preparing download of $filename');
       await Future.delayed(const Duration(milliseconds: 100));
 
@@ -374,7 +363,6 @@ class _SourcePanelState extends State<SourcePanel> {
       rethrow;
     }
   }
-
 
   void _handleClear() {
     _model.reset();

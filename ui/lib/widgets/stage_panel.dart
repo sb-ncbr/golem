@@ -3,7 +3,8 @@ import 'package:faabul_color_picker/faabul_color_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:geneweb/api/auth.dart';
-import 'package:geneweb/api/organism.dart';
+import 'package:geneweb/models/user.dart';
+import 'package:geneweb/models/organism.dart';
 import 'package:geneweb/genes/stage_selection.dart';
 import 'package:geneweb/genes/gene_list.dart';
 import 'package:geneweb/genes/gene_model.dart';
@@ -20,21 +21,26 @@ class StageSubtitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final selectedStages =
-        context.select<GeneModel, List<String>>((model) => model.stageSelection?.selectedStages ?? []);
-    final expectedResults = context.select<GeneModel, int>((model) => model.expectedSeriesCount);
+    final selectedStages = context.select<GeneModel, List<String>>(
+        (model) => model.stageSelection?.selectedStages ?? []);
+    final expectedResults =
+        context.select<GeneModel, int>((model) => model.expectedSeriesCount);
     if (expectedResults > 60 && selectedStages.length > 5) {
-      return Text('Analysis would result in $expectedResults series, reduce the number of selected stages');
+      return Text(
+          'Analysis would result in $expectedResults series, reduce the number of selected stages');
     }
     if (selectedStages.isEmpty) {
       return const Text('No stages selected');
     }
     final isMain = selectedStages.contains(GeneModel.kAllStages);
-    final realStages = selectedStages.where((s) => s != GeneModel.kAllStages).toList();
+    final realStages =
+        selectedStages.where((s) => s != GeneModel.kAllStages).toList();
     List<String> texts = [];
     if (isMain) texts.add('Genome');
     if (realStages.isNotEmpty) {
-      texts.add(realStages.length == 1 ? realStages.first : '${realStages.length} other stages');
+      texts.add(realStages.length == 1
+          ? realStages.first
+          : '${realStages.length} other stages');
     }
     return Text(texts.join(' and '));
   }
@@ -59,7 +65,6 @@ class _StagePanelState extends State<StagePanel> {
   late List<double>? _percentiles;
   late int? _count;
 
-  
   final _percentileController = TextEditingController();
   final _countController = TextEditingController();
 
@@ -85,13 +90,15 @@ class _StagePanelState extends State<StagePanel> {
   }
 
   void _updateStateFromModel() {
-    final filter = GeneModel.of(context).stageSelection ?? StageSelection(selectedStages: []);
+    final filter = GeneModel.of(context).stageSelection ??
+        StageSelection(selectedStages: []);
     _selectedStages = filter.selectedStages;
     _strategy = filter.strategy;
     _selection = filter.selection;
     _percentiles = filter.percentiles;
     _count = filter.count;
-    _percentileController.text = '${((_percentiles!.firstOrNull ?? 0) * 100).round()}';
+    _percentileController.text =
+        '${((_percentiles!.firstOrNull ?? 0) * 100).round()}';
     _countController.text = '$_count';
     setState(() {});
   }
@@ -99,10 +106,14 @@ class _StagePanelState extends State<StagePanel> {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final allowFilter = context.select<GeneModel, bool>((model) => model.sourceGenes?.stages == null);
-    final sourceGenes = context.select<GeneModel, GeneList?>((model) => model.sourceGenes);
-    final metadata = context.select<GeneModel, OrganismMetadata?>((model) => model.metadata);
-    if (sourceGenes == null && metadata == null) return const Center(child: Text('Load source data first'));
+    final allowFilter = context
+        .select<GeneModel, bool>((model) => model.sourceGenes?.stages == null);
+    final sourceGenes =
+        context.select<GeneModel, GeneList?>((model) => model.sourceGenes);
+    final metadata =
+        context.select<GeneModel, OrganismMetadata?>((model) => model.metadata);
+    if (sourceGenes == null && metadata == null)
+      return const Center(child: Text('Load source data first'));
     return Align(
       alignment: Alignment.topLeft,
       child: Form(
@@ -111,18 +122,21 @@ class _StagePanelState extends State<StagePanel> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('ALL GENES', style: textTheme.titleSmall),
-            Text('Distribution of the motif across all genes.', style: textTheme.bodySmall),
+            Text('Distribution of the motif across all genes.',
+                style: textTheme.bodySmall),
             const SizedBox(height: 16),
             _StageCard(
               name: 'ALL GENES',
               color: null,
-              isSelected: _selectedStages.contains(GeneModel.kAllStages) == true,
+              isSelected:
+                  _selectedStages.contains(GeneModel.kAllStages) == true,
               showPicker: false,
               onToggle: (value) => _handleToggle(GeneModel.kAllStages, value),
             ),
             const SizedBox(height: 16),
             Text('DEVELOPMENTAL STAGES', style: textTheme.titleSmall),
-            Text('Distribution of the motif in genes with elevated transcript levels in certain developmental stage.',
+            Text(
+                'Distribution of the motif in genes with elevated transcript levels in certain developmental stage.',
                 style: textTheme.bodySmall),
             const SizedBox(height: 16),
             Consumer<GeneModel>(builder: (context, model, child) {
@@ -133,12 +147,15 @@ class _StagePanelState extends State<StagePanel> {
               for (final stage in stageKeys) {
                 sourceGenes?.colors[stage] ??= randomStageColor(stage);
               }
-              
-              final orderedKeys = stageGroups.keys.sorted((a, b) => switch ((a, b)) {
-                ('Other', _) => 1,
-                (_, 'Other') => -1,
-                (String a, String b) => a.compareTo(b)
-              });
+
+              final orderedKeys = stageGroups.keys.sorted((a, b) => switch ((
+                    a,
+                    b
+                  )) {
+                    ('Other', _) => 1,
+                    (_, 'Other') => -1,
+                    (String a, String b) => a.compareTo(b)
+                  });
 
               return Column(
                 spacing: 8,
@@ -158,7 +175,8 @@ class _StagePanelState extends State<StagePanel> {
             }),
             if (allowFilter) ...[
               const SizedBox(height: 16),
-              Text('Choose the transcript level based on TPM:', style: textTheme.titleSmall),
+              Text('Choose the transcript level based on TPM:',
+                  style: textTheme.titleSmall),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
@@ -177,30 +195,31 @@ class _StagePanelState extends State<StagePanel> {
                   ),
                   if (_selection == FilterSelection.percentile)
                     SizedBox(
-                    width: 400,
-                    child: TextFormField(
-                      controller: _percentileController,
-                      decoration: const InputDecoration(
-                          labelText: 'Percentiles', suffix: Text('th')),
-                      keyboardType: TextInputType.number,
-                      onChanged: (value) {
-                        setState(() {
-                          _percentiles =
+                      width: 400,
+                      child: TextFormField(
+                        controller: _percentileController,
+                        decoration: const InputDecoration(
+                            labelText: 'Percentiles', suffix: Text('th')),
+                        keyboardType: TextInputType.number,
+                        onChanged: (value) {
+                          setState(() {
+                            _percentiles =
+                                _parsePercentiles(_percentileController.text);
+                          });
+                          _handleChanged();
+                        },
+                        validator: (value) {
+                          final percentiles =
                               _parsePercentiles(_percentileController.text);
-                        });
-                        _handleChanged();
-                      },
-                      validator: (value) {
-                        final percentiles =
-                            _parsePercentiles(_percentileController.text);
-                        if (percentiles
-                            .any((parsed) => parsed < 0 || parsed > 100) || percentiles.isEmpty) {
-                          return 'Enter one or more numbers between 0 and 100 separated by commas.';
-                        }
-                        return null;
-                      },
+                          if (percentiles.any(
+                                  (parsed) => parsed < 0 || parsed > 100) ||
+                              percentiles.isEmpty) {
+                            return 'Enter one or more numbers between 0 and 100 separated by commas.';
+                          }
+                          return null;
+                        },
+                      ),
                     ),
-                  ),
                   if (_selection == FilterSelection.fixed)
                     SizedBox(
                       width: 200,
@@ -209,13 +228,20 @@ class _StagePanelState extends State<StagePanel> {
                         decoration: const InputDecoration(labelText: 'Count'),
                         keyboardType: TextInputType.number,
                         onChanged: (value) {
-                          setState(() =>
-                              _count = (int.tryParse(_countController.text) ?? 0).clamp(0, sourceGenes?.genes.length ?? metadata!.genes.length));
+                          setState(() => _count =
+                              (int.tryParse(_countController.text) ?? 0).clamp(
+                                  0,
+                                  sourceGenes?.genes.length ??
+                                      metadata!.genes.length));
                           _handleChanged();
                         },
                         validator: (value) {
                           final parsed = int.tryParse(_countController.text);
-                          if (parsed == null || parsed < 0 || parsed > (sourceGenes?.genes.length ?? metadata!.genes.length)) {
+                          if (parsed == null ||
+                              parsed < 0 ||
+                              parsed >
+                                  (sourceGenes?.genes.length ??
+                                      metadata!.genes.length)) {
                             return 'Enter a number between 0 and ${sourceGenes?.genes.length ?? metadata!.genes.length}';
                           }
                           return null;
@@ -252,7 +278,9 @@ class _StagePanelState extends State<StagePanel> {
   }
 
   String _formatPercentiles(List<double> percentiles) {
-    return percentiles.map((p) =>  '${((p) * 100).toStringAsFixed(2)}%').join(', ');
+    return percentiles
+        .map((p) => '${((p) * 100).toStringAsFixed(2)}%')
+        .join(', ');
   }
 
   void _handleChanged() {
@@ -283,7 +311,8 @@ class _StagePanelState extends State<StagePanel> {
 
   void _handleToggleGroup(List<String> group) {
     setState(() {
-      final allSelected = group.every((stage) => _selectedStages.contains(stage));
+      final allSelected =
+          group.every((stage) => _selectedStages.contains(stage));
       if (!allSelected) {
         final notSelected =
             group.where((stage) => !_selectedStages.contains(stage));
@@ -298,7 +327,7 @@ class _StagePanelState extends State<StagePanel> {
   Map<String, List<String>> _groupStages(List<String> stages) {
     final stageGroups = <String, List<String>>{};
     final allGroups = groupBy(stages, (String key) => key.split('_').first);
-    
+
     for (final entry in allGroups.entries) {
       final groupKey = entry.key;
       final groupStages = entry.value;
@@ -312,7 +341,7 @@ class _StagePanelState extends State<StagePanel> {
         stageGroups[groupKey] = entry.value;
       }
     }
-    
+
     return stageGroups;
   }
 
@@ -347,8 +376,11 @@ class _StageCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final backgroundColor = isSelected ? (color ?? Colors.grey) : (color ?? Colors.grey).withValues(alpha: 0.4);
-    final textColor = backgroundColor.computeLuminance() > 0.5 ? Colors.black : Colors.white;
+    final backgroundColor = isSelected
+        ? (color ?? Colors.grey)
+        : (color ?? Colors.grey).withValues(alpha: 0.4);
+    final textColor =
+        backgroundColor.computeLuminance() > 0.5 ? Colors.black : Colors.white;
     return SizedBox(
       width: 160,
       height: 120,
@@ -373,7 +405,9 @@ class _StageCard extends StatelessWidget {
                     ),
                     if (metadata != null && metadata!.srr.isNotEmpty)
                       TextButton(
-                        style: const ButtonStyle(padding: WidgetStatePropertyAll(EdgeInsetsGeometry.all(0))),
+                          style: const ButtonStyle(
+                              padding: WidgetStatePropertyAll(
+                                  EdgeInsetsGeometry.all(0))),
                           onPressed: () => metadata!.url.isNotEmpty
                               ? launchUrl(Uri.parse(metadata!.url))
                               : null,
@@ -398,8 +432,7 @@ class _StageCard extends StatelessWidget {
                           onTap: () => _showColorPickerDialog(context, name),
                           child: const Padding(
                               padding: EdgeInsetsGeometry.only(right: 4),
-                              child: Icon(Icons.colorize_rounded))
-                          ),
+                              child: Icon(Icons.colorize_rounded))),
                   ],
                 )
               ],
@@ -415,7 +448,7 @@ class _StageCard extends StatelessWidget {
         .then((newColor) async {
       if (newColor != null && context.mounted) {
         final organism = GeneModel.of(context).sourceGenes?.organism;
-        final response = await StagePreference.updatePreference(StagePreference(
+        final response = await updatePreference(StagePreference(
             stageName: name,
             color: newColor.toHex(),
             organismId: organism?.id));
@@ -434,7 +467,7 @@ class _StageGroup extends StatelessWidget {
   final List<String> stageGroup;
   final String? groupTitle;
   final bool showGroupTitle;
-  final Function(String, bool)  onStageToggle;
+  final Function(String, bool) onStageToggle;
   final VoidCallback onGroupToggle;
 
   const _StageGroup(
@@ -447,9 +480,12 @@ class _StageGroup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final sourceGenes = context.select<GeneModel, GeneList?>((model) => model.sourceGenes);
-    final filter = context.select<GeneModel, StageSelection>((model) => model.stageSelection ?? StageSelection(selectedStages: []));
-    final metadata = context.select<GeneModel, Map<String, StageMetadata>>(((model) {
+    final sourceGenes =
+        context.select<GeneModel, GeneList?>((model) => model.sourceGenes);
+    final filter = context.select<GeneModel, StageSelection>(
+        (model) => model.stageSelection ?? StageSelection(selectedStages: []));
+    final metadata =
+        context.select<GeneModel, Map<String, StageMetadata>>(((model) {
       final metadata = model.metadata?.stages ?? {};
       final stageKeys = metadata.keys.where((k) => stageGroup.contains(k));
       return {for (var sKey in stageKeys) sKey: metadata[sKey]!};
@@ -462,8 +498,7 @@ class _StageGroup extends StatelessWidget {
           if (showGroupTitle)
             Text(groupTitle ?? '', style: textTheme.titleSmall),
           TextButton(
-              onPressed: onGroupToggle,
-              child: const Text('Toggle group')),
+              onPressed: onGroupToggle, child: const Text('Toggle group')),
         ]),
         Wrap(
           children: [
@@ -480,5 +515,4 @@ class _StageGroup extends StatelessWidget {
       ],
     );
   }
-
 }

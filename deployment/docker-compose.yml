@@ -7,8 +7,8 @@ services:
       - "443:443"
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt
-      - /home/ubuntu/geneweb/deployment/nginx/nginx.conf.template:/etc/nginx/nginx.conf.template
-      - /home/ubuntu/geneweb/deployment/nginx/snippets:/etc/nginx/snippets
+      - /home/${GOLEM_DEPLOY_USERNAME:-ubuntu}/geneweb/deployment/nginx/nginx.conf.template:/etc/nginx/nginx.conf.template
+      - /home/${GOLEM_DEPLOY_USERNAME:-ubuntu}/geneweb/deployment/nginx/snippets:/etc/nginx/snippets
     entrypoint: >
       /bin/sh -c "envsubst '$$SERVER_NAME' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && nginx -g 'daemon off;'"
     environment:
@@ -30,7 +30,7 @@ services:
     environment:
       POSTGRES_DB: postgres
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: ${GOLEM_DATABASE_PASSWORD}
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "postgres"]
       interval: 10s
@@ -53,7 +53,7 @@ services:
       GOLEM_ACCESS_TOKEN_EXPIRE_MINUTES: 30
       GOLEM_SECRET_KEY: ${GOLEM_SECRET_KEY}
     volumes:
-      - /home/ubuntu/geneweb-data:/data
+      - /home/${GOLEM_DEPLOY_USERNAME:-ubuntu}/geneweb-data:/data
     depends_on:
       db:
         condition: service_healthy
