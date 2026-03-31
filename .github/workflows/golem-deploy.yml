@@ -5,7 +5,7 @@ on:
     inputs:
       environment:
         type: choice
-        options: ["Production", "Development"]
+        options: ["Development", "Production"]
         required: true
         description: "Select the environment to deploy to"
 

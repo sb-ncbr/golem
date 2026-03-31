@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geneweb/analysis/analysis_series.dart';
 import 'package:geneweb/analysis/analysis_options.dart';
 import 'package:geneweb/api/auth.dart';
+import 'package:geneweb/api/api_service.dart';
 import 'package:geneweb/models/motif.dart';
 import 'package:geneweb/models/user.dart';
 import 'package:geneweb/models/organism.dart';
@@ -420,6 +423,8 @@ class GeneModel extends ChangeNotifier {
         motifs.length *
         stageSelection!.percentiles!.length;
     assert(totalIterations > 0);
+
+    unawaited(ApiService.instance.post('/analytics/track'));
 
     int iterations = 0;
     analysisProgress = 0.0;
