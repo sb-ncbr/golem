@@ -59,6 +59,7 @@ def _setup_admin(app: FastAPI) -> None:
         title="GOLEM Admin",
         index_view=AdminIndexView(label="GOLEM Admin", path="/"),
         templates_dir="app/admin/templates",
+        base_url="/admin",
     )
 
     admin.add_view(GroupAdminView(Group))
