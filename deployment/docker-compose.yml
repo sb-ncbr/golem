@@ -2,6 +2,10 @@ services:
   nginx:
     container_name: golem-nginx
     image: nginx:stable-alpine
+    logging:
+      driver: journald
+      options:
+        tag: "golem-nginx"
     ports:
       - "80:80"
       - "443:443"

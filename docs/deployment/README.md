@@ -41,3 +41,8 @@ $ cp -r backend/data/* $GOLEM_DATA_DIR # variable defined in docker-compose.yml
 ```
 
 This will initialize database with some organisms and an admin user. The credentials of the admin user are defined by `$GOLEM_DEFAULT_ADMIN_USERNAME` and `$GOLEM_DEFAULT_ADMIN_PASSWORD` environment variables.
+
+
+### Misc
+- nginx logs can also be viewed using journalctl:
+   - `$ journalctl CONTAINER_TAG=golem-nginx`
