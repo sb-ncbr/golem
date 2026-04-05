@@ -82,13 +82,19 @@ http {
     gzip on;
 
     server {
-        if ($host = ${SERVER_NAME}) {
-            return 301 https://$host$request_uri;
-        }
-
-
         listen 80;
         server_name ${SERVER_NAME};
-        return 404;
+
+        ## 
+        # Handling of certificate renewal without having to stop and start the nginx container
+        # to free up port 80 for certbot.
+        ##
+        location /.well-known/acme-challenge/ {
+            root /var/www/certbot;
+        }
+
+        location / {
+            return 301 https://$host$request_uri;
+        }
     }
 }

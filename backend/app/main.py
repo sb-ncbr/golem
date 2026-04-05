@@ -35,7 +35,7 @@ V1_PREFIX = "/api/v1"
 def _setup_middleware(app: FastAPI) -> None:
     app.add_middleware(
         CORSMiddleware,  # warning: https://github.com/fastapi/fastapi/discussions/10968
-        allow_origins=["http://localhost:4200"],  # TODO: add allowed origins
+        allow_origins=["http://localhost:4200"],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

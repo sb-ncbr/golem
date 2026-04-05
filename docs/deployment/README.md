@@ -1,5 +1,7 @@
 # Deployment Docs
 
+- [Automatic Certificate Renewal](./certificate-renewal.md)
+
 ## Deployment to an Existing Environment
 
 The deployment process is automated using GitHub Actions. The workflow can be triggered manually by navigating to **Actions** -> **GOLEM Deploy** -> **Run workflow**.
@@ -29,6 +31,7 @@ The pipeline assumes that the deployment target is a linux system.
 4. SSL certificates for the given domain name.
    - Currently, it assumes the use of `certbot`. You can generate a new certificate using `sudo certbot certonly --standalone`.
    - Paths to certificates are currently configured in `deployment/docker-compose.yml` and `deployment/nginx/nginx.conf.template`
+   - For automatic certificate renewal, see [certificate-renewal.md](./certificate-renewal.md)
 
 ### Initial Database Seed
 

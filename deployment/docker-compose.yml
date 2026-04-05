@@ -10,7 +10,8 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - /etc/letsencrypt:/etc/letsencrypt
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /var/www/certbot:/var/www/certbot
       - /home/${GOLEM_DEPLOY_USERNAME:-ubuntu}/geneweb/deployment/nginx/nginx.conf.template:/etc/nginx/nginx.conf.template
       - /home/${GOLEM_DEPLOY_USERNAME:-ubuntu}/geneweb/deployment/nginx/snippets:/etc/nginx/snippets
     entrypoint: >
