@@ -140,12 +140,31 @@ class ApiService {
     adapter.withCredentials = true;
 
     final options = BaseOptions(
-      baseUrl: '${const String.fromEnvironment('GOLEM_API_URL')}/api/v1',
+      baseUrl: buildApiBaseUrl(),
       headers: {'Accept': 'application/json'},
     );
     final dio = Dio(options);
     dio.httpClientAdapter = adapter;
 
     return dio;
+  }
+
+  static String buildApiBaseUrl() {
+    return _buildBaseUrl('/api/v1');
+  }
+
+  static String buildAdminBaseUrl() {
+    return _buildBaseUrl('/admin');
+  }
+
+  static String _buildBaseUrl(String path) {
+    final origin = Uri.base;
+
+    if (origin.host == 'localhost') {
+      const apiPort = int.fromEnvironment('GOLEM_API_PORT', defaultValue: 8000);
+      return origin.replace(port: apiPort, path: path).toString();
+    }
+
+    return '${origin.origin}$path';
   }
 }

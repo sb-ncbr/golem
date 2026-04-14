@@ -15,4 +15,5 @@ The following doc describes the structure of the frontend application.
 
 Each environment variable should use the `GOLEM_` prefix to avoid conflicts with other applications.
 
-- `GOLEM_API_URL` - The URL of the backend API (e.g. https://golem-url/api/v1)
+- `GOLEM_API_PORT` - The port of the backend API (e.g. 8000).
+    - Only relevant for local development, can be omitted (defaults to 8000).

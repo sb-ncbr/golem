@@ -15,9 +15,10 @@ services:
       - /home/${GOLEM_DEPLOY_USERNAME:-ubuntu}/geneweb/deployment/nginx/nginx.conf.template:/etc/nginx/nginx.conf.template
       - /home/${GOLEM_DEPLOY_USERNAME:-ubuntu}/geneweb/deployment/nginx/snippets:/etc/nginx/snippets
     entrypoint: >
-      /bin/sh -c "envsubst '$$SERVER_NAME' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && nginx -g 'daemon off;'"
+      /bin/sh -c "envsubst '$$PRIMARY_SERVER_NAME $$SERVER_NAMES' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && nginx -g 'daemon off;'"
     environment:
-      SERVER_NAME: ${GOLEM_SERVER_NAME}
+      PRIMARY_SERVER_NAME: ${GOLEM_PRIMARY_SERVER_NAME}
+      SERVER_NAMES: ${GOLEM_SERVER_NAMES}
     depends_on:
       api:
         condition: service_healthy
@@ -84,8 +85,6 @@ services:
     build:
       context: ../ui
       dockerfile: Dockerfile
-      args:
-        GOLEM_API_URL: https://${GOLEM_SERVER_NAME}/api/v1
     ports:
       - "3000:3000"
     networks:

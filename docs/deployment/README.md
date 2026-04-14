@@ -28,7 +28,7 @@ The pipeline assumes that the deployment target is a linux system.
 2. Docker
 3. Repository cloned into the users `$HOME` directory.
    - e.g. if you are using user named `golem`, then the repository should be cloned into `/home/golem/geneweb`.
-4. SSL certificates for the given domain name.
+4. SSL certificates for the given domain name(s).
    - Currently, it assumes the use of `certbot`. You can generate a new certificate using `sudo certbot certonly --standalone`.
    - Paths to certificates are currently configured in `deployment/docker-compose.yml` and `deployment/nginx/nginx.conf.template`
    - For automatic certificate renewal, see [certificate-renewal.md](./certificate-renewal.md)

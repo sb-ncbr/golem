@@ -10,7 +10,6 @@ The central HTTP client. All backend calls go through here.
 - Wraps [Dio](https://pub.dev/packages/dio) and exposes some HTTP methods.
 - Every method returns an `ApiResponse<T>`, which is either a success (with `data`) or an error (with `message`).
 - `download` is a special case that reads raw bytes (e.g. for FASTA/JSON files) and manually decodes error responses since the response type is `bytes`.
-- The base URL is read from the `GOLEM_API_URL` environment variable.
 - `withCredentials = true` is set on the browser adapter, meaning session cookies are forwarded automatically (used for auth).
 
 ## Auth (auth.dart)

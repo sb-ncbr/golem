@@ -36,7 +36,8 @@ jobs:
             echo "Setting up environment variables ..."
             export GOLEM_SECRET_KEY=${{ secrets.GOLEM_SECRET_KEY }}
             export GOLEM_DATABASE_PASSWORD=${{ secrets.GOLEM_DATABASE_PASSWORD }}
-            export GOLEM_SERVER_NAME=${{ vars.GOLEM_SERVER_NAME }}
+            export GOLEM_PRIMARY_SERVER_NAME=${{ vars.GOLEM_PRIMARY_SERVER_NAME }}
+            export GOLEM_SERVER_NAMES="${{ vars.GOLEM_SERVER_NAMES }}"
             export GOLEM_DEPLOY_USERNAME=${{ secrets.SSH_USERNAME }}
 
             echo "Navigating to the deployment directory ..."

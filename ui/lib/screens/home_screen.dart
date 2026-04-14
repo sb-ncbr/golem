@@ -8,12 +8,13 @@ import 'package:url_launcher/url_launcher.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
-  final adminUrl = '${const String.fromEnvironment('GOLEM_API_URL')}/admin';
 
   @override
   Widget build(BuildContext context) {
     final name = context.select<GeneModel, String?>((model) => model.name);
-    final username = context.select<GeneModel, String?>((model) => model.user?.username);
+    final username =
+        context.select<GeneModel, String?>((model) => model.user?.username);
+    final adminUri = Uri.parse(ApiService.buildAdminBaseUrl());
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: 80.0,
@@ -51,7 +52,8 @@ class HomeScreen extends StatelessWidget {
             Expanded(
                 child: Align(
                     alignment: Alignment.center,
-                    child: Text(name ?? '', style: const TextStyle(fontStyle: FontStyle.italic)))),
+                    child: Text(name ?? '',
+                        style: const TextStyle(fontStyle: FontStyle.italic)))),
             Expanded(
               child: Align(
                   alignment: Alignment.center,
@@ -67,19 +69,18 @@ class HomeScreen extends StatelessWidget {
                       ),
                       if (GeneModel.of(context).isAdmin)
                         IconButton(
-                            icon: const Icon(Icons.admin_panel_settings, size: 30),
+                            icon: const Icon(Icons.admin_panel_settings,
+                                size: 30),
                             onPressed: () async {
-                              await launchUrl(
-                                Uri.parse(adminUrl),
-                                webOnlyWindowName: '_blank'
-                                );
+                              await launchUrl(adminUri,
+                                  webOnlyWindowName: '_blank');
                             }),
                       if (GeneModel.of(context).isSignedIn)
                         IconButton(
                             icon: const Icon(Icons.logout, size: 30),
                             onPressed: () async {
-                              final logoutResponse =
-                                  await ApiService.instance.post("/auth/logout");
+                              final logoutResponse = await ApiService.instance
+                                  .post("/auth/logout");
                               if (context.mounted && logoutResponse.success) {
                                 GeneModel.of(context).user = null;
                               }

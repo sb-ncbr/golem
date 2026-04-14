@@ -53,8 +53,11 @@ $ flutter pub get
 ```
 
 Once the packages are installed, we can run the UI app:
+
+> **Note:** `GOLEM_API_PORT` variable is optional and defaults to `8000`. It is only relevant when running the app locally, without nginx.
+
 ```bash
-$ flutter run --dart-define=GOLEM_API_URL=http://localhost:8000 --web-port 4200 -d web-server
+$ flutter run --dart-define=GOLEM_API_PORT=8000 --web-port 4200 -d web-server
 ```
 
 Once the app is started, you can access it on [http://localhost:4200](http://localhost:4200).
