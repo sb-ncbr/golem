@@ -126,6 +126,10 @@ class ApiService {
     }
   }
 
+  Uri getUrl(String path) {
+    return Uri.tryParse(buildApiBaseUrl() + path)!;
+  }
+
   ApiResponse _handleResponseError(Object e) {
     if (e is DioException) {
       if (e.response != null) {

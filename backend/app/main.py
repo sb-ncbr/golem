@@ -16,6 +16,7 @@ from app.admin.user_admin import UserAdminView
 from app.api.v1.middleware.exception import http_exception_handler
 from app.api.v1.middleware.user_loader import UserLoaderMiddleware
 from app.api.v1.routes.auth import auth_router
+from app.api.v1.routes.docs import docs_router
 from app.api.v1.routes.motifs import motifs_router
 from app.api.v1.routes.organisms import organisms_router
 from app.api.v1.routes.preferences import preferences_router
@@ -51,6 +52,7 @@ def _setup_routes(app: FastAPI) -> None:
     app.include_router(router=preferences_router, prefix=V1_PREFIX)
     app.include_router(router=motifs_router, prefix=V1_PREFIX)
     app.include_router(router=analytics_router, prefix=V1_PREFIX)
+    app.include_router(router=docs_router, prefix=V1_PREFIX)
 
 
 def _setup_admin(app: FastAPI) -> None:
