@@ -7,6 +7,7 @@ from starlette_admin.contrib.sqlmodel import Admin
 from app.admin.admin_base import AdminIndexView, AdminViewBase
 from app.admin.group_admin import GroupAdminView
 from app.admin.organism_admin import OrganismAdminView
+from app.admin.site_setting_admin import SiteSettingsAdminView
 from app.admin.stage_preference_admin import (
     UserStagePreferenceAdminView,
     DefaultStagePreferenceAdminView,
@@ -21,6 +22,7 @@ from app.api.v1.routes.motifs import motifs_router
 from app.api.v1.routes.organisms import organisms_router
 from app.api.v1.routes.preferences import preferences_router
 from app.api.v1.routes.ready import ready_router
+from app.api.v1.routes.site_settings import settings_router
 from app.api.v1.routes.analytics import analytics_router
 from app.db.db import engine
 from app.db.models.group import Group
@@ -53,6 +55,7 @@ def _setup_routes(app: FastAPI) -> None:
     app.include_router(router=motifs_router, prefix=V1_PREFIX)
     app.include_router(router=analytics_router, prefix=V1_PREFIX)
     app.include_router(router=docs_router, prefix=V1_PREFIX)
+    app.include_router(router=settings_router, prefix=V1_PREFIX)
 
 
 def _setup_admin(app: FastAPI) -> None:
@@ -72,6 +75,7 @@ def _setup_admin(app: FastAPI) -> None:
     admin.add_view(AdminViewBase(Motif))
     admin.add_view(AdminViewBase(MotifDefinition))
     admin.add_view(UsageAdminView(label="Usage", path="/usage"))
+    admin.add_view(SiteSettingsAdminView(label="Site Settings", path="/settings"))
 
     admin.mount_to(app)
 

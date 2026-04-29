@@ -19,6 +19,7 @@ from alembic import context
 from app.db.models.group import Group, OrganismGroup, UserGroup  # noqa
 from app.db.models.organism import Organism  # noqa
 from app.db.models.user import User  # noqa
+from app.db.models.site_setting import SiteSetting  # noqa
 from app.db.models.stage_preference import DefaultStagePreference, UserStagePreference  # noqa
 
 from app.config import app_config

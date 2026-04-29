@@ -1,0 +1,163 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Site Settings</h1>
+
+    <div id="settings-list" class="mb-8">
+        <!-- Populated by JS -->
+    </div>
+
+    <h2 class="mb-4">Add New Setting</h2>
+
+    <div class="row mb-4">
+        <div class="col-md-2">
+            <label class="form-label">Setting Name</label>
+            <input type="text" id="new-key" class="form-control" placeholder="e.g. site_title" />
+        </div>
+        <div class="col-md-9">
+            <label class="form-label">Setting Value</label>
+            <input type="text" id="new-value" class="form-control" />
+        </div>
+        <div class="col-md-1 d-flex align-items-end">
+            <button type="button" class="btn btn-primary w-100" onclick="addSetting()">Add</button>
+        </div>
+    </div>
+
+    <div id="alert-container"></div>
+</div>
+
+<style>
+    /* setting tabler variables, so that alert is properly colored */
+
+    .alert-success {
+        --tblr-alert-color: var(--tblr-success);
+        --tblr-alert-bg: var(--tblr-success-lt);
+        --tblr-alert-border-color: var(--tblr-success);
+    }
+
+    .alert-danger {
+        --tblr-alert-color: var(--tblr-danger);
+        --tblr-alert-bg: var(--tblr-danger-lt);
+        --tblr-alert-border-color: var(--tblr-danger);
+    }
+</style>
+
+<script>
+    function showAlert(message, type = 'danger') {
+        const container = document.querySelector('#alert-container');
+        container.innerHTML = `
+            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>`;
+    }
+
+    function createSettingRow(key, value) {
+        const row = document.createElement('div');
+        row.className = 'row mb-3';
+        row.dataset.key = key;
+        row.innerHTML = `
+            <div class="col-md-3">
+                <label class="form-label">Key</label>
+                <input type="text" class="form-control" value="${key}" disabled />
+            </div>
+            <div class="col-md-7">
+                <label class="form-label">Value</label>
+                <input type="text" class="form-control setting-value" value="${value}" />
+            </div>
+            <div class="col-md-2 d-flex gap-2 align-items-end">
+                <button type="button" class="btn btn-primary" onclick="updateSetting('${key}', this)">Update</button>
+                <button type="button" class="btn btn-danger" onclick="deleteSetting('${key}', this)">Delete</button>
+            </div>`;
+        return row;
+    }
+
+    async function fetchSettings() {
+        try {
+            const response = await fetch('/api/v1/settings');
+            const data = await response.json();
+            if (!data.success) {
+                throw new Error(data.message ?? 'Something went wrong :(')
+            } ;
+
+            const settingsList = document.querySelector('#settings-list');
+            settingsList.innerHTML = '';
+            Object.entries(data.data).forEach(([key, value]) => {
+                settingsList.appendChild(createSettingRow(key, value));
+            });
+        } catch (err) {
+            showAlert(err.message);
+        }
+    }
+
+    async function addSetting() {
+        const key = document.querySelector('#new-key').value.trim();
+        const value = document.querySelector('#new-value').value.trim();
+        if (!key) {
+            return showAlert('Setting name is required.');
+        }
+
+        try {
+            const response = await fetch('/api/v1/settings', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key, value })
+            });
+            const data = await response.json();
+            if (!data.success) {
+                throw new Error(data.message ?? 'Something went wrong :(');
+            }
+
+            document.querySelector('#new-key').value = '';
+            document.querySelector('#new-value').value = '';
+            document.querySelector('#settings-list').appendChild(createSettingRow(key, value));
+            showAlert('Setting added.', 'success');
+        } catch (err) {
+            showAlert(err.message);
+        }
+    }
+
+    async function updateSetting(key, btn) {
+        const row = document.querySelector(`[data-key="${key}"]`);
+        const value = row.querySelector('.setting-value').value.trim();
+
+        try {
+            const response = await fetch('/api/v1/settings', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key, value })
+            });
+            const data = await response.json();
+            if (!data.success) {
+                throw new Error(data.message ?? 'Something went wrong :(');
+            }
+            showAlert(`"${key}" updated.`, 'success');
+        } catch (err) {
+            showAlert(err.message);
+        }
+    }
+
+    async function deleteSetting(key, btn) {
+        if (!confirm(`Delete setting "${key}"?`)) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/v1/settings/${encodeURIComponent(key)}`, {
+                method: 'DELETE'
+            });
+            const data = await response.json();
+            if (!data.success) {
+                throw new Error(data.message ?? 'Something went wrong :(');
+            }
+
+            document.querySelector(`[data-key="${key}"]`).remove();
+            showAlert(`"${key}" deleted.`, 'success');
+        } catch (err) {
+            showAlert(err.message);
+        }
+    }
+
+    fetchSettings();
+</script>
+{% endblock %}
