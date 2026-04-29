@@ -267,7 +267,7 @@ class _StagePanelState extends State<StagePanel> {
                     'By default, the genes included in the analysis from each stage are those genes whose transcripts represent 90% of all transcripts transcribed from the total number of protein-coding genes in the selected stage.',
                     style: textTheme.labelMedium),
                 Text(
-                    'Multiple percentiles (e.g., 90%, 80%, 70%) can be visualized simultaneously by entering the values separated by commas (e.g., 90,80,70).',
+                    'Multiple percentiles (e.g., 90th, 80th, 70th) can be visualized simultaneously by entering the values separated by commas (e.g., 90,80,70).',
                     style: textTheme.labelMedium),
               ],
             ],
