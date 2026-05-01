@@ -67,6 +67,12 @@ class HomeScreen extends StatelessWidget {
                             style:
                                 const TextStyle(fontStyle: FontStyle.italic)),
                       ),
+                      IconButton(
+                          onPressed: () async {
+                            await launchUrl(
+                                ApiService.instance.getUrl('/docs'));
+                          },
+                          icon: const Icon(Icons.help)),
                       if (GeneModel.of(context).isAdmin)
                         IconButton(
                             icon: const Icon(Icons.admin_panel_settings,
