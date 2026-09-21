@@ -1,11 +1,5 @@
 """Proxy route for fetching motif matrices from the public JASPAR API.
-
-Exists purely to sidestep browser CORS: the UI runs as a web app, so a
-direct fetch from the browser to jaspar.elixir.no is subject to CORS and
-fails with a generic "Failed to fetch" the moment the target doesn't
-send back permissive CORS headers. A server-to-server call from THIS
-backend isn't a browser request, so CORS doesn't apply to it at all --
-the browser only ever talks to our own already-CORS-configured API.
+   Should solve the CORS problem.
 """
 
 import httpx

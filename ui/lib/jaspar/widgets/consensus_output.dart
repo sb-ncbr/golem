@@ -1,5 +1,3 @@
-// consensus_output.dart
-
 import 'package:flutter/material.dart';
 
 import '../motif_logic.dart';
@@ -41,7 +39,7 @@ class ConsensusOutput extends StatelessWidget {
             ),
             const SizedBox(height: 20),
 
-            // Řádek zvětšených barevných písmen (využití prostoru)
+            // Row of scaled colour letters (to consume space)
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               physics: const BouncingScrollPhysics(),
@@ -67,7 +65,7 @@ class ConsensusOutput extends StatelessWidget {
             ),
             const SizedBox(height: 20),
 
-            // Výsledná sekvence
+            // Final sequence
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               physics: const BouncingScrollPhysics(),
@@ -76,7 +74,7 @@ class ConsensusOutput extends StatelessWidget {
                 style: const TextStyle(
                   fontWeight: FontWeight.w800,
                   letterSpacing: 3.0,
-                  fontSize: 26, // Zvětšený text výsledné sekvence
+                  fontSize: 26,
                 ),
               ),
             ),

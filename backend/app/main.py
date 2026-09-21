@@ -54,7 +54,7 @@ def _setup_routes(app: FastAPI) -> None:
     app.include_router(router=organisms_router, prefix=V1_PREFIX)
     app.include_router(router=preferences_router, prefix=V1_PREFIX)
     app.include_router(router=motifs_router, prefix=V1_PREFIX)
-    app.include_router(router=jaspar_router, prefix=V1_PREFIX)
+    app.include_router(router=jaspar_router, prefix=V1_PREFIX) # new
     app.include_router(router=analytics_router, prefix=V1_PREFIX)
     app.include_router(router=docs_router, prefix=V1_PREFIX)
     app.include_router(router=settings_router, prefix=V1_PREFIX)

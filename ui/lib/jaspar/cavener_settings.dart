@@ -1,15 +1,3 @@
-// cavener_settings.dart
-//
-// Bundles the threshold/toggle values that used to be separate
-// `double _t1`, `bool _icEnabled`... fields on the screen's State class.
-// Grouping related values into one small immutable class -- instead of
-// passing them around individually -- is a pattern worth knowing well;
-// it's the same idea as a "config object" in JS/Python.
-//
-// `copyWith` is the standard Dart way to "change" an immutable object:
-// you don't mutate it, you build a new one that's mostly a copy of the
-// old one with a couple of fields swapped out.
-
 class CavenerSettings {
   const CavenerSettings({
     this.t1 = 0.5,

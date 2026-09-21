@@ -1,15 +1,3 @@
-// jaspar_import_section.dart
-//
-// Owns the JASPAR-ID text controller and the loading/status flags.
-// Only reports outward through one callback: "here's a motif, do
-// something with it." The PFM table below this (in the parent screen)
-// is always visible and directly editable, so there's no separate
-// "paste raw text" mode any more -- if you have a matrix in some other
-// format, you'd retype it into the table anyway, so that second path
-// was redundant with the table itself. (`parseManualMatrix` in
-// motif_logic.dart still exists and is still fully tested/usable -- it
-// just isn't wired to any UI control right now.)
-
 import 'package:flutter/material.dart';
 
 import '../jaspar_api.dart';
@@ -74,7 +62,8 @@ class _JasparImportSectionState extends State<JasparImportSection> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('1. Import matrix', style: Theme.of(context).textTheme.titleMedium),
+            Text('1. Import matrix',
+                style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 12),
             Row(
               children: [

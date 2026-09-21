@@ -1,5 +1,3 @@
-// jaspar_iupac_panel.dart
-
 import 'package:flutter/material.dart';
 
 import 'cavener_settings.dart';
@@ -78,7 +76,6 @@ class _JasparIupacPanelState extends State<JasparIupacPanel> {
 
   void _onAddPosition() => setState(() {
         _motif.addPosition();
-        // removed: _tableVersion++;
       });
 
   void _onReverseComplement() => setState(() {
@@ -123,7 +120,7 @@ class _JasparIupacPanelState extends State<JasparIupacPanel> {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // LEVÝ SLOUPEC: 3/5 šířky strány (60 %)
+                // LEFT COLUMN: 3/5 page's width
                 Expanded(
                   flex: 3,
                   child: Column(
@@ -152,7 +149,7 @@ class _JasparIupacPanelState extends State<JasparIupacPanel> {
                 ),
                 const SizedBox(width: 16),
 
-                // PRAVÝ SLOUPEC: 2/5 šířky stránky (40 %)
+                // RIGHT COLUMN: 2/5 page's width
                 Expanded(
                   flex: 2,
                   child: ValueListenableBuilder<CavenerSettings>(

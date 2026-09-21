@@ -1,5 +1,3 @@
-// widgets/pfm_table_editor.dart
-
 import 'package:flutter/material.dart';
 
 import '../motif_logic.dart';
@@ -126,7 +124,7 @@ class _PfmTableEditorState extends State<PfmTableEditor> {
                 style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 12),
 
-            // Scrollbar obaluje celý obsah (Sequence Logo + PFM Matice)
+            // Scrollbar wraps the whole thingy (Sequence Logo + PFM Matrix)
             Scrollbar(
               controller: _scrollController,
               thumbVisibility: true,
@@ -140,13 +138,13 @@ class _PfmTableEditorState extends State<PfmTableEditor> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Sequence Logo bez dodatečného posunutí
+                      // Sequence Logo
                       RepaintBoundary(
                         child: SequenceLogo(motif: widget.motif),
                       ),
                       const SizedBox(height: 16),
 
-                      // Tabulka PFM matice
+                      // Table of PFM matrix
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [

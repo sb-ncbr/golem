@@ -1,5 +1,3 @@
-// motif_logic.dart
-
 import 'dart:convert';
 import 'dart:math' as math;
 
@@ -121,7 +119,7 @@ class BaseFreq {
   final double freq;
 }
 
-// Cavener (1987) consensus rule for a single column.
+// Cavener (1987) consensus rule for a single column mixed with spice.
 String getCavenerIupac(
   JasparMotif motif,
   int columnIdx, {

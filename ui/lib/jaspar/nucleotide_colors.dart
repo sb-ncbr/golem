@@ -1,11 +1,3 @@
-// nucleotide_colors.dart
-//
-// Shared color/size lookup for rendering bases and IUPAC codes. Pulled
-// out into its own file because THREE widgets need the same palette
-// (sequence logo, PFM table, consensus output) -- without this, each one
-// would carry its own copy of the same switch-statement, and they'd
-// eventually drift out of sync with each other.
-
 import 'package:flutter/material.dart';
 
 Color baseColor(String base) {
@@ -30,14 +22,6 @@ Color iupacColor(String code) {
   return const Color(0xFFA05A00); // B,D,H,V
 }
 
-// Every IUPAC code is a single CHARACTER regardless of how many bases it
-// represents (e.g. "R" is one character but stands for A-or-G) -- so
-// sizing by `code.length` (as an earlier version of this function did)
-// never actually distinguished anything; every non-N code has length 1
-// and got the same size. To size letters by how *ambiguous* they are
-// (a clean single base drawn bigger/bolder than a 3-way toss-up), we
-// need to know how many nucleotides the code stands for, which means
-// checking against these small sets instead.
 const _twoBaseCodes = {'R', 'Y', 'S', 'W', 'K', 'M'};
 const _threeBaseCodes = {'B', 'D', 'H', 'V'};
 

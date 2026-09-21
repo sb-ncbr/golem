@@ -12,8 +12,9 @@ class SequenceLogo extends StatelessWidget {
     required this.motif,
     this.maxHeight = 160,
     this.colWidth =
-        76.0, // Odpovídá šířce sloupce v PfmTableEditor (72 + 4px margin)
-    this.startX = 40.0, // Odpovídá šířce popisků A, C, G, T (32 + 8px margin)
+        76.0, // Is the same as the width of the column in PfmTableEditor (72 + 4px margin)
+    this.startX =
+        40.0, // Is the same as the width of the A, C, G, T (32 + 8px margin)
   });
 
   final JasparMotif motif;

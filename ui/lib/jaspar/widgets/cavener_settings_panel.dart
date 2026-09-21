@@ -1,10 +1,3 @@
-// cavener_settings_panel.dart
-//
-// Another StatelessWidget: it holds no state itself, just displays
-// `settings` and reports every change upward via `onChanged`. This
-// "controlled component" pattern (parent owns the data, child only
-// renders + reports) will look familiar if you've used React.
-
 import 'package:flutter/material.dart';
 
 import '../cavener_settings.dart';
