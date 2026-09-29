@@ -1,0 +1,136 @@
+import 'package:flutter/material.dart';
+
+import '../jaspar_api.dart';
+import '../motif_logic.dart';
+
+import 'package:url_launcher/url_launcher.dart';
+
+const _jasparDatabaseUrl = 'https://jaspar.elixir.no/';
+
+class JasparImportSection extends StatefulWidget {
+  const JasparImportSection({super.key, required this.onMotifLoaded});
+
+  final ValueChanged<JasparMotif> onMotifLoaded;
+
+  @override
+  State<JasparImportSection> createState() => _JasparImportSectionState();
+}
+
+class _JasparImportSectionState extends State<JasparImportSection> {
+  final _idController = TextEditingController(text: 'MA0931.1');
+  bool _loading = false;
+  String? _statusMessage;
+  bool _statusIsError = false;
+
+  @override
+  void dispose() {
+    _idController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _downloadFromJaspar() async {
+    final id = _idController.text.trim();
+    if (id.isEmpty) return;
+
+    setState(() {
+      _loading = true;
+      _statusIsError = false;
+      _statusMessage = 'Fetching $id from JASPAR…';
+    });
+
+    try {
+      final motif = await fetchJasparMotif(id);
+      motif.calculatePpm();
+      if (!mounted) return;
+      setState(() {
+        _statusIsError = false;
+        _statusMessage = '✔ Loaded: ${motif.name} (${motif.id})';
+      });
+      widget.onMotifLoaded(motif);
+    } on JasparFetchException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _statusIsError = true;
+        _statusMessage = '✘ Fetch failed: $e';
+      });
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('1. Import matrix',
+                style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 4),
+            InkWell(
+              onTap: () => launchUrl(Uri.parse(_jasparDatabaseUrl)),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.open_in_new,
+                      size: 14, color: Theme.of(context).colorScheme.primary),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Browse the JASPAR database',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.primary,
+                      decoration: TextDecoration.underline,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _idController,
+                    decoration: const InputDecoration(
+                      labelText: 'JASPAR ID',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                FilledButton(
+                  onPressed: _loading ? null : _downloadFromJaspar,
+                  child: _loading
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Download'),
+                ),
+              ],
+            ),
+            if (_statusMessage != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                _statusMessage!,
+                style: TextStyle(
+                  color: _statusIsError ? Colors.red : Colors.green.shade700,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+            const SizedBox(height: 4),
+            Text(
+              'Or edit the PFM table below directly.',
+              style: Theme.of(context).textTheme.labelSmall,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

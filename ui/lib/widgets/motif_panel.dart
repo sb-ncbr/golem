@@ -3,6 +3,7 @@ import 'dart:collection';
 import 'package:flutter/material.dart';
 import 'package:geneweb/models/motif.dart';
 import 'package:geneweb/api/motif.dart';
+import 'package:geneweb/jaspar/jaspar_iupac_panel.dart';
 import 'package:geneweb/models/organism.dart';
 import 'package:geneweb/genes/gene_list.dart';
 import 'package:geneweb/genes/gene_model.dart';
@@ -60,6 +61,7 @@ class _MotifPanelState extends State<MotifPanel> {
   final _definitionController = TextEditingController();
   final _reverseComplementsController = TextEditingController();
   bool _showEditor = false;
+  bool _showJasparPanel = false;
 
   late final List<Motif> _motifs;
 
@@ -187,56 +189,88 @@ class _MotifPanelState extends State<MotifPanel> {
     );
   }
 
-  Wrap _buildMotifEditor() {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      crossAxisAlignment: WrapCrossAlignment.start,
+  Widget _buildMotifEditor() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(
-          width: 200,
-          child: TextFormField(
-            controller: _nameController,
-            onChanged: (value) {
-              setState(() => _customMotifName = value);
-            },
-            decoration: const InputDecoration(
-              labelText: "Motif name",
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: _showJasparPanel
+                ? JasparIupacPanel(
+                    onConfirm: (result) {
+                      final current = _definitionController.text.trim();
+                      final updated =
+                          current.isEmpty ? result : '$current\n$result';
+                      _definitionController.text = updated;
+                      setState(() {
+                        _customMotifDefinition = updated.toUpperCase();
+                        _showJasparPanel = false;
+                      });
+                      _updateReverseComplements();
+                    },
+                    onCancel: () => setState(() => _showJasparPanel = false),
+                  )
+                : TextButton(
+                    onPressed: () => setState(() => _showJasparPanel = true),
+                    child: const Text('Add custom logo…'),
+                  ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.start,
+          children: [
+            SizedBox(
+              width: 200,
+              child: TextFormField(
+                controller: _nameController,
+                onChanged: (value) {
+                  setState(() => _customMotifName = value);
+                },
+                decoration: const InputDecoration(
+                  labelText: "Motif name",
+                ),
+              ),
             ),
-          ),
+            SizedBox(
+              width: 400,
+              child: TextFormField(
+                controller: _definitionController,
+                validator: _validateMotifDefinition,
+                onChanged: (value) {
+                  setState(() => _customMotifDefinition = value.toUpperCase());
+                  _updateReverseComplements();
+                },
+                textCapitalization: TextCapitalization.characters,
+                autocorrect: false,
+                maxLines: null,
+                decoration: InputDecoration(
+                    labelText: "Motif definition",
+                    helperText: "Separate multiple motifs with new line.",
+                    errorText: _customMotifError),
+              ),
+            ),
+            SizedBox(
+              width: 400,
+              child: TextFormField(
+                controller: _reverseComplementsController,
+                textCapitalization: TextCapitalization.characters,
+                autocorrect: false,
+                maxLines: null,
+                readOnly: true,
+                enabled: false,
+                decoration: const InputDecoration(
+                    labelText: "Reverse complements (read only)"),
+              ),
+            ),
+            ElevatedButton(
+                onPressed: _handleAddMotif, child: const Text('ADD')),
+          ],
         ),
-        SizedBox(
-          width: 400,
-          child: TextFormField(
-            controller: _definitionController,
-            validator: _validateMotifDefinition,
-            onChanged: (value) {
-              setState(() => _customMotifDefinition = value.toUpperCase());
-              _updateReverseComplements();
-            },
-            textCapitalization: TextCapitalization.characters,
-            autocorrect: false,
-            maxLines: null,
-            decoration: InputDecoration(
-                labelText: "Motif definition",
-                helperText: "Separate multiple motifs with new line.",
-                errorText: _customMotifError),
-          ),
-        ),
-        SizedBox(
-          width: 400,
-          child: TextFormField(
-            controller: _reverseComplementsController,
-            textCapitalization: TextCapitalization.characters,
-            autocorrect: false,
-            maxLines: null,
-            readOnly: true,
-            enabled: false,
-            decoration: const InputDecoration(
-                labelText: "Reverse complements (read only)"),
-          ),
-        ),
-        ElevatedButton(onPressed: _handleAddMotif, child: const Text('ADD')),
       ],
     );
   }
@@ -312,7 +346,7 @@ class _MotifPanelState extends State<MotifPanel> {
 
       if (_model.isSignedIn) {
         final newMotif = await createMotif(motif);
-        _motifs.add(newMotif);
+        _model.setMotifs([..._model.motifs, newMotif]);
       } else {
         _model.setMotifs([motif, ..._model.motifs]);
       }
