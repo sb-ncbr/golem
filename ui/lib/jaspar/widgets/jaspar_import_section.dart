@@ -3,6 +3,10 @@ import 'package:flutter/material.dart';
 import '../jaspar_api.dart';
 import '../motif_logic.dart';
 
+import 'package:url_launcher/url_launcher.dart';
+
+const _jasparDatabaseUrl = 'https://jaspar.elixir.no/';
+
 class JasparImportSection extends StatefulWidget {
   const JasparImportSection({super.key, required this.onMotifLoaded});
 
@@ -13,7 +17,7 @@ class JasparImportSection extends StatefulWidget {
 }
 
 class _JasparImportSectionState extends State<JasparImportSection> {
-  final _idController = TextEditingController(text: 'MA0004.1');
+  final _idController = TextEditingController(text: 'MA931.1');
   bool _loading = false;
   String? _statusMessage;
   bool _statusIsError = false;
@@ -64,6 +68,26 @@ class _JasparImportSectionState extends State<JasparImportSection> {
           children: [
             Text('1. Import matrix',
                 style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 4),
+            InkWell(
+              onTap: () => launchUrl(Uri.parse(_jasparDatabaseUrl)),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.open_in_new,
+                      size: 14, color: Theme.of(context).colorScheme.primary),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Browse the JASPAR database',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.primary,
+                      decoration: TextDecoration.underline,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: 12),
             Row(
               children: [

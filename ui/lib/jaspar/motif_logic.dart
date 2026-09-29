@@ -81,10 +81,10 @@ class JasparMotif {
 
   JasparMotif reverseComplement() {
     final newPfm = [
-      List<int>.filled(length, 0),
-      List<int>.filled(length, 0),
-      List<int>.filled(length, 0),
-      List<int>.filled(length, 0),
+      List<int>.filled(length, 0, growable: true),
+      List<int>.filled(length, 0, growable: true),
+      List<int>.filled(length, 0, growable: true),
+      List<int>.filled(length, 0, growable: true),
     ];
     for (var col = 0; col < length; col++) {
       final targetCol = length - 1 - col;
@@ -137,7 +137,7 @@ String getCavenerIupac(
   final b4 = entries[3];
 
   // 1 base
-  if (b1.freq > t1 && b1.freq > 2 * b2.freq) {
+  if (b1.freq >= t1 && b1.freq > 2 * b2.freq) {
     return b1.name;
   }
 

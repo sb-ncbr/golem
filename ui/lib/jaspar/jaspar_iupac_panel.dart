@@ -23,13 +23,13 @@ class JasparIupacPanel extends StatefulWidget {
 
 class _JasparIupacPanelState extends State<JasparIupacPanel> {
   JasparMotif _motif = JasparMotif(
-    id: 'MA0004.1',
-    name: 'Arnt',
+    id: 'MA0931.1',
+    name: 'ABI5',
     pfm: [
-      [4, 19, 0, 0, 0, 0],
-      [16, 1, 20, 0, 0, 0],
-      [0, 0, 0, 20, 0, 20],
-      [0, 0, 0, 0, 20, 0],
+      [181, 87, 608, 0, 999, 0, 0, 0, 152, 164],
+      [257, 87, 314, 922, 0, 999, 0, 0, 70, 164],
+      [257, 660, 0, 78, 0, 0, 999, 0, 709, 337],
+      [306, 167, 78, 0, 0, 0, 0, 999, 70, 336],
     ],
   );
 
