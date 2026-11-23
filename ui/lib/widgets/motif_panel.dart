@@ -61,7 +61,6 @@ class _MotifPanelState extends State<MotifPanel> {
   final _definitionController = TextEditingController();
   final _reverseComplementsController = TextEditingController();
   bool _showEditor = false;
-  bool _showJasparPanel = false;
 
   late final List<Motif> _motifs;
 
@@ -118,10 +117,18 @@ class _MotifPanelState extends State<MotifPanel> {
                       onToggle: (bool value) => _handlePresetToggled(m, value),
                       isSelected: true,
                     )),
+              ],
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 if (!_showEditor)
                   TextButton(
                       onPressed: _handleOpenEditor,
-                      child: const Text('Add custom motif…'))
+                      child: const Text('Add custom motif…')),
+                TextButton(
+                    onPressed: _handleAddFromJaspar,
+                    child: const Text('Add custom motif from JASPAR…')),
               ],
             ),
             if (_showEditor) ...[
@@ -193,31 +200,6 @@ class _MotifPanelState extends State<MotifPanel> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: _showJasparPanel
-                ? JasparIupacPanel(
-                    onConfirm: (result) {
-                      final current = _definitionController.text.trim();
-                      final updated =
-                          current.isEmpty ? result : '$current\n$result';
-                      _definitionController.text = updated;
-                      setState(() {
-                        _customMotifDefinition = updated.toUpperCase();
-                        _showJasparPanel = false;
-                      });
-                      _updateReverseComplements();
-                    },
-                    onCancel: () => setState(() => _showJasparPanel = false),
-                  )
-                : TextButton(
-                    onPressed: () => setState(() => _showJasparPanel = true),
-                    child: const Text('Add custom logo…'),
-                  ),
-          ),
-        ),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
@@ -330,10 +312,37 @@ class _MotifPanelState extends State<MotifPanel> {
   }
 
   void _handleOpenEditor() {
-    setState(() => _showEditor = true);
+    setState(() {
+      _showEditor = true;
+      _customMotifName = null;
+      _customMotifDefinition = null;
+      _customMotifError = null;
+    });
     _nameController.text = '';
     _definitionController.text = '';
     _reverseComplementsController.text = '';
+  }
+
+  /// Opens the JASPAR pop-up; the resulting IUPAC motif lands in the custom
+  /// motif editor (which is opened if it isn't already).
+  Future<void> _handleAddFromJaspar() async {
+    final result = await showJasparIupacDialog(context);
+    if (result == null || !mounted) return;
+
+    if (!_showEditor) _handleOpenEditor();
+
+    final current = _definitionController.text.trim();
+    final updated =
+        current.isEmpty ? result.definition : '$current\n${result.definition}';
+    _definitionController.text = updated;
+    if (_nameController.text.trim().isEmpty && result.name.isNotEmpty) {
+      _nameController.text = result.name;
+    }
+    setState(() {
+      _customMotifDefinition = updated.toUpperCase();
+      _customMotifName = _nameController.text;
+    });
+    _updateReverseComplements();
   }
 
   Future<void> _handleAddMotif() async {

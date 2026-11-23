@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:math' as math;
 
+import 'jaspar_metadata.dart';
+
 typedef Pfm = List<List<int>>;
 typedef Ppm = List<List<double>>;
 
@@ -25,7 +27,12 @@ const Map<String, String> _iupacTable = {
 };
 
 class JasparMotif {
-  JasparMotif({required this.id, required this.name, required this.pfm}) {
+  JasparMotif({
+    required this.id,
+    required this.name,
+    required this.pfm,
+    this.metadata,
+  }) {
     _validateShape();
     calculatePpm();
   }
@@ -33,9 +40,18 @@ class JasparMotif {
   String id;
   String name;
   Pfm pfm;
+  JasparMetadata? metadata;
   Ppm ppm = [[], [], [], []];
 
   int get length => pfm.isEmpty ? 0 : pfm[0].length;
+
+  /// Deep copy (used for the undo/redo history).
+  JasparMotif copy() => JasparMotif(
+        id: id,
+        name: name,
+        pfm: [for (final row in pfm) List<int>.of(row)],
+        metadata: metadata,
+      );
 
   void _validateShape() {
     if (pfm.length != 4) {
@@ -93,7 +109,12 @@ class JasparMotif {
       newPfm[2][targetCol] = pfm[1][col]; // G <- C
       newPfm[3][targetCol] = pfm[0][col]; // T <- A
     }
-    return JasparMotif(id: id, name: '$name (rev. comp.)', pfm: newPfm);
+    return JasparMotif(
+      id: id,
+      name: '$name (rev. comp.)',
+      pfm: newPfm,
+      metadata: metadata,
+    );
   }
 }
 

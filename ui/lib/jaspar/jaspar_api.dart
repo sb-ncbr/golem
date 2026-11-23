@@ -4,6 +4,7 @@
 
 import 'package:geneweb/api/api_service.dart';
 
+import 'jaspar_metadata.dart';
 import 'motif_logic.dart';
 
 class JasparFetchException implements Exception {
@@ -38,8 +39,9 @@ Future<JasparMotif> fetchJasparMotif(String motifId) async {
         List<int>.from(pfmJson['G'] as List),
         List<int>.from(pfmJson['T'] as List),
       ],
+      metadata: JasparMetadata.fromJson(data),
     );
   } on Error catch (e) {
-    throw JasparFetchException('JASPAR returned an invalid matrix: ${e}');
+    throw JasparFetchException('JASPAR returned an invalid matrix: $e');
   }
 }
