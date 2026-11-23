@@ -7,3 +7,4 @@ dev_datasets/**
 dev_datasets_pre2023-09-08/**
 .DS_Store
 pipeline/.DS_Store
+backend/data/analysis_usage.jsonl
